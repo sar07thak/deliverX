@@ -1,0 +1,15 @@
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\bin\Debug\net10.0\DeliverX.Application.deps.json
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\bin\Debug\net10.0\DeliverX.Application.dll
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\bin\Debug\net10.0\DeliverX.Application.pdb
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\bin\Debug\net10.0\DeliverX.Domain.dll
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\bin\Debug\net10.0\DeliverX.Domain.pdb
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.Application.csproj.AssemblyReference.cache
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.Application.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.Application.AssemblyInfoInputs.cache
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.Application.AssemblyInfo.cs
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.Application.csproj.CoreCompileInputs.cache
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.41FF2137.Up2Date
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.Application.dll
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\refint\DeliverX.Application.dll
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\DeliverX.Application.pdb
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Application\obj\Debug\net10.0\ref\DeliverX.Application.dll
