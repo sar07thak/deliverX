@@ -1,0 +1,62 @@
+# .NET Build outputs
+bin/
+obj/
+out/
+
+# User-specific files
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# Visual Studio / Visual Studio Code
+.vs/
+.vscode/
+*.code-workspace
+
+# Rider
+.idea/
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+
+# Environment variables
+.env
+.env.local
+.env.development
+.env.production
+
+# NuGet Packages
+*.nupkg
+*.snupkg
+.nuget/
+packages/
+
+# Test Results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+
+# Logs
+*.log
+logs/
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+# Publish files
+publish/
+
+# Migration backup files
+*.bak
+
+# Sensitive data
+appsettings.Development.json
+appsettings.Production.json
+secrets.json
