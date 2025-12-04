@@ -57,6 +57,7 @@ C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\Del
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\DeliverX.Infrastructure.AssemblyInfoInputs.cache
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\DeliverX.Infrastructure.AssemblyInfo.cs
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\DeliverX.Infrastructure.csproj.CoreCompileInputs.cache
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\DeliverX.Infrastructure.sourcelink.json
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\DeliverX.86B89D9A.Up2Date
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\DeliverX.Infrastructure.dll
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Infrastructure\obj\Debug\net10.0\refint\DeliverX.Infrastructure.dll

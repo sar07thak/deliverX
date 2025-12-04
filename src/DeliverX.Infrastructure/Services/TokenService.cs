@@ -73,6 +73,9 @@ public class TokenService : ITokenService
         // Generate refresh token
         var refreshToken = Guid.NewGuid().ToString();
 
+        // Check profile completion based on role
+        var profileComplete = await CheckProfileCompletionAsync(user, cancellationToken);
+
         return new TokenResponse
         {
             AccessToken = accessToken,
@@ -84,9 +87,31 @@ public class TokenService : ITokenService
                 Role = user.Role,
                 Phone = user.Phone,
                 Email = user.Email,
-                ProfileComplete = !string.IsNullOrEmpty(user.Phone) || !string.IsNullOrEmpty(user.Email)
+                ProfileComplete = profileComplete
             }
         };
+    }
+
+    private async Task<bool> CheckProfileCompletionAsync(User user, CancellationToken cancellationToken)
+    {
+        // For DP role, check if DeliveryPartnerProfile exists with FullName
+        if (user.Role == "DP")
+        {
+            var dpProfile = await _context.DeliveryPartnerProfiles
+                .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+            return dpProfile != null && !string.IsNullOrEmpty(dpProfile.FullName);
+        }
+
+        // For BC role, check if BusinessConsumerProfile exists with BusinessName
+        if (user.Role == "BC" || user.Role == "DBC")
+        {
+            var bcProfile = await _context.BusinessConsumerProfiles
+                .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+            return bcProfile != null && !string.IsNullOrEmpty(bcProfile.BusinessName);
+        }
+
+        // For Admin/DPCM/EC roles, profile is always complete (no additional profile needed)
+        return true;
     }
 
     public async Task<TokenResponse?> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)

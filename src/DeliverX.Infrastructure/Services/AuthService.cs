@@ -79,10 +79,27 @@ public class AuthService : IAuthService
         var user = await _context.Users.FirstOrDefaultAsync(u => u.Phone == request.Phone, cancellationToken);
         if (user == null)
         {
+            // Parse role from request or default to EC
+            var role = UserRole.EC;
+            if (!string.IsNullOrEmpty(request.Role))
+            {
+                role = request.Role.ToUpper() switch
+                {
+                    "EC" => UserRole.EC,
+                    "BC" => UserRole.DBC,      // Business Consumer = DBC
+                    "DBC" => UserRole.DBC,
+                    "DP" => UserRole.DP,
+                    "DPCM" => UserRole.DPCM,
+                    "SA" => UserRole.SuperAdmin,
+                    "SUPERADMIN" => UserRole.SuperAdmin,
+                    _ => UserRole.EC
+                };
+            }
+
             user = new User
             {
                 Phone = request.Phone,
-                Role = UserRole.EC, // Default role for phone-based registration
+                Role = role,
                 IsPhoneVerified = true,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,

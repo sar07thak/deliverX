@@ -51,7 +51,7 @@ builder.Services.AddAuthentication(options =>
 
 builder.Services.AddAuthorization();
 
-// Register application services
+// Register application services (IAM)
 builder.Services.AddScoped<IOtpService, OtpService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ISessionService, SessionService>();
@@ -59,6 +59,53 @@ builder.Services.AddScoped<IAuditService, AuditService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITotpService, TotpService>();
+
+// Register KYC & Registration services
+builder.Services.AddScoped<IDPRegistrationService, DeliverX.Infrastructure.Services.DPRegistrationService>();
+builder.Services.AddScoped<IDuplicateDetectionService, DeliverX.Infrastructure.Services.DuplicateDetectionService>();
+builder.Services.AddScoped<IAadhaarVerificationService, DeliverX.Infrastructure.Services.AadhaarVerificationService>();
+builder.Services.AddScoped<IPANVerificationService, DeliverX.Infrastructure.Services.PANVerificationService>();
+builder.Services.AddScoped<IBankVerificationService, DeliverX.Infrastructure.Services.BankVerificationService>();
+
+// Register Service Area & Geofencing services (F-03)
+builder.Services.AddScoped<IServiceAreaService, ServiceAreaService>();
+
+// Register Pricing & Commission services (F-04)
+builder.Services.AddScoped<IPricingService, PricingService>();
+
+// Register Delivery & Matching services (F-05)
+builder.Services.AddScoped<IDeliveryService, DeliveryService>();
+builder.Services.AddScoped<IMatchingService, MatchingService>();
+
+// Register Delivery State Machine & POD services (F-06)
+builder.Services.AddScoped<IDeliveryStateService, DeliveryStateService>();
+
+// Register Ratings & Behavior Index services (F-07)
+builder.Services.AddScoped<IRatingService, RatingService>();
+
+// Register Complaints & Inspector services (F-08)
+builder.Services.AddScoped<IComplaintService, ComplaintService>();
+
+// Register Wallet, Payments & Settlements services (F-09)
+builder.Services.AddScoped<IWalletService, WalletService>();
+
+// Register Subscription & Billing services (F-10)
+builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
+
+// Register Referral & Donation services (F-11)
+builder.Services.AddScoped<IReferralService, ReferralService>();
+
+// Register Admin Dashboard services (F-12)
+builder.Services.AddScoped<IDashboardService, DashboardService>();
+
+// Register external API clients (Mock for MVP)
+builder.Services.AddScoped<DeliverX.Infrastructure.Services.External.IDigiLockerClient, DeliverX.Infrastructure.Services.External.MockDigiLockerClient>();
+builder.Services.AddScoped<DeliverX.Infrastructure.Services.External.INSDLPANClient, DeliverX.Infrastructure.Services.External.MockNSDLPANClient>();
+builder.Services.AddScoped<DeliverX.Infrastructure.Services.External.IBankVerificationClient, DeliverX.Infrastructure.Services.External.MockBankVerificationClient>();
+
+// Register utilities
+builder.Services.AddScoped<DeliverX.Infrastructure.Utilities.IEncryptionHelper, DeliverX.Infrastructure.Utilities.EncryptionHelper>();
+builder.Services.AddScoped<DeliverX.Infrastructure.Utilities.INameMatchHelper, DeliverX.Infrastructure.Utilities.NameMatchHelper>();
 
 // Register FluentValidation
 builder.Services.AddValidatorsFromAssemblyContaining<DeliverX.Application.Validators.LoginRequestValidator>();

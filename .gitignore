@@ -60,3 +60,4 @@ publish/
 appsettings.Development.json
 appsettings.Production.json
 secrets.json
+node_modules/

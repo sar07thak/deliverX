@@ -5,6 +5,7 @@ C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\DeliverX.Do
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\DeliverX.Domain.AssemblyInfoInputs.cache
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\DeliverX.Domain.AssemblyInfo.cs
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\DeliverX.Domain.csproj.CoreCompileInputs.cache
+C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\DeliverX.Domain.sourcelink.json
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\DeliverX.Domain.dll
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\refint\DeliverX.Domain.dll
 C:\Users\HP\Desktop\finnidTech\src\DeliverX.Domain\obj\Debug\net10.0\DeliverX.Domain.pdb
