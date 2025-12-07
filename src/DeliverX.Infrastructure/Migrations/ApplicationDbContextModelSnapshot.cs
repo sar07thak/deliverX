@@ -2666,6 +2666,9 @@ namespace DeliverX.Infrastructure.Migrations
                     b.Property<int>("FailedLoginAttempts")
                         .HasColumnType("INTEGER");
 
+                    b.Property<string>("FullName")
+                        .HasColumnType("TEXT");
+
                     b.Property<bool>("Is2FAEnabled")
                         .HasColumnType("INTEGER");
 

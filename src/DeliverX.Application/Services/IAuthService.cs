@@ -39,4 +39,14 @@ public interface IAuthService
     /// Revoke a specific session
     /// </summary>
     Task<Result> RevokeSessionAsync(Guid sessionId, Guid userId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Update user profile (name, email)
+    /// </summary>
+    Task<Result> UpdateProfileAsync(Guid userId, UpdateProfileRequest request, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Get user profile data
+    /// </summary>
+    Task<UserProfileDto?> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default);
 }

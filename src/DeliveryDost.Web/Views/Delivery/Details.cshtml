@@ -1,0 +1,396 @@
+@model DeliveryDost.Web.ViewModels.Delivery.DeliveryDetailsViewModel
+@{
+    ViewData["Title"] = $"Delivery #{Model.Id.ToString().Substring(0, 8)}";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                Delivery #@Model.Id.ToString().Substring(0, 8).ToUpper()
+            </h1>
+            <p class="page-subtitle">
+                Created @Model.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")
+            </p>
+        </div>
+        <span class="badge @Model.StatusBadgeClass fs-6 px-3 py-2">
+            @Model.Status
+        </span>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Details -->
+    <div class="col-lg-8 mb-4">
+        <!-- Route Map -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-map me-2"></i> Route
+            </div>
+            <div class="card-body p-0">
+                <div id="routeMap" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <!-- Location Cards -->
+        <div class="row mb-4">
+            <div class="col-md-6 mb-3 mb-md-0">
+                <div class="card h-100 border-success">
+                    <div class="card-header bg-success text-white">
+                        <i class="bi bi-geo-alt-fill me-2"></i> Pickup
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-2">@Model.Pickup.Address</h6>
+                        @if (!string.IsNullOrEmpty(Model.Pickup.ContactName))
+                        {
+                            <p class="mb-1">
+                                <i class="bi bi-person me-2"></i>@Model.Pickup.ContactName
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Pickup.ContactPhone))
+                        {
+                            <p class="mb-1">
+                                <i class="bi bi-telephone me-2"></i>
+                                <a href="tel:@Model.Pickup.ContactPhone">@Model.Pickup.ContactPhone</a>
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Pickup.Instructions))
+                        {
+                            <p class="mb-0 text-muted small">
+                                <i class="bi bi-info-circle me-1"></i>@Model.Pickup.Instructions
+                            </p>
+                        }
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="card h-100 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        <i class="bi bi-geo-alt-fill me-2"></i> Drop
+                    </div>
+                    <div class="card-body">
+                        <h6 class="mb-2">@Model.Drop.Address</h6>
+                        @if (!string.IsNullOrEmpty(Model.Drop.ContactName))
+                        {
+                            <p class="mb-1">
+                                <i class="bi bi-person me-2"></i>@Model.Drop.ContactName
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Drop.ContactPhone))
+                        {
+                            <p class="mb-1">
+                                <i class="bi bi-telephone me-2"></i>
+                                <a href="tel:@Model.Drop.ContactPhone">@Model.Drop.ContactPhone</a>
+                            </p>
+                        }
+                        @if (!string.IsNullOrEmpty(Model.Drop.Instructions))
+                        {
+                            <p class="mb-0 text-muted small">
+                                <i class="bi bi-info-circle me-1"></i>@Model.Drop.Instructions
+                            </p>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Package Details -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-box me-2"></i> Package Details
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-3">
+                        <small class="text-muted d-block">Type</small>
+                        <strong>@Model.Package.TypeDisplay</strong>
+                    </div>
+                    <div class="col-md-3 mb-3">
+                        <small class="text-muted d-block">Weight</small>
+                        <strong>@Model.Package.WeightKg kg</strong>
+                    </div>
+                    @if (Model.Package.Value.HasValue)
+                    {
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Declared Value</small>
+                            <strong>₹@Model.Package.Value.Value.ToString("N0")</strong>
+                        </div>
+                    }
+                    @if (Model.DistanceKm.HasValue)
+                    {
+                        <div class="col-md-3 mb-3">
+                            <small class="text-muted d-block">Distance</small>
+                            <strong>@Model.DistanceKm.Value.ToString("F1") km</strong>
+                        </div>
+                    }
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Package.Description))
+                {
+                    <p class="mb-0 text-muted">@Model.Package.Description</p>
+                }
+            </div>
+        </div>
+
+        <!-- Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history me-2"></i> Delivery Timeline
+            </div>
+            <div class="card-body">
+                @if (Model.Timeline.Any())
+                {
+                    <div class="timeline">
+                        @foreach (var item in Model.Timeline)
+                        {
+                            <div class="timeline-item @(item.IsCurrent ? "current" : "") @(item.IsCompleted ? "completed" : "")">
+                                <div class="timeline-icon">
+                                    <i class="bi @item.IconClass"></i>
+                                </div>
+                                <div class="timeline-content">
+                                    <h6 class="mb-1">@item.Status</h6>
+                                    <small class="text-muted">@item.Timestamp.ToString("dd MMM, hh:mm tt")</small>
+                                    @if (!string.IsNullOrEmpty(item.Description))
+                                    {
+                                        <p class="mb-0 small">@item.Description</p>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No timeline events yet.</p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Summary & Actions -->
+    <div class="col-lg-4 mb-4">
+        <!-- Pricing -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-currency-rupee me-2"></i> Pricing
+            </div>
+            <div class="card-body text-center">
+                @if (Model.FinalPrice.HasValue)
+                {
+                    <small class="text-muted d-block">Final Price</small>
+                    <h2 class="mb-0 text-success">₹@Model.FinalPrice.Value.ToString("N0")</h2>
+                }
+                else if (Model.EstimatedPrice.HasValue)
+                {
+                    <small class="text-muted d-block">Estimated Price</small>
+                    <h2 class="mb-0">₹@Model.EstimatedPrice.Value.ToString("N0")</h2>
+                }
+                else
+                {
+                    <span class="text-muted">Price not yet calculated</span>
+                }
+            </div>
+        </div>
+
+        <!-- Assigned DP -->
+        @if (Model.AssignedDP != null)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-person-badge me-2"></i> Delivery Partner
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="avatar-circle me-3">
+                            @if (!string.IsNullOrEmpty(Model.AssignedDP.PhotoUrl))
+                            {
+                                <img src="@Model.AssignedDP.PhotoUrl" alt="@Model.AssignedDP.Name" class="rounded-circle" width="50" height="50" />
+                            }
+                            else
+                            {
+                                <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center" style="width: 50px; height: 50px;">
+                                    @Model.AssignedDP.Name[0]
+                                </div>
+                            }
+                        </div>
+                        <div>
+                            <h6 class="mb-0">@Model.AssignedDP.Name</h6>
+                            <div class="text-warning">
+                                @for (int i = 0; i < (int)Model.AssignedDP.Rating; i++)
+                                {
+                                    <i class="bi bi-star-fill"></i>
+                                }
+                                <span class="text-muted ms-1">@Model.AssignedDP.Rating.ToString("F1")</span>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.AssignedDP.Phone))
+                    {
+                        <a href="tel:@Model.AssignedDP.Phone" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-telephone me-1"></i> Call DP
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+        else if (Model.ShowMatchingProgress)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-search me-2"></i> Finding Delivery Partner
+                </div>
+                <div class="card-body text-center">
+                    <div class="spinner-border text-primary mb-3" role="status"></div>
+                    <p class="mb-0">Searching for available delivery partners...</p>
+                    <small class="text-muted">This usually takes 1-2 minutes</small>
+                </div>
+            </div>
+        }
+
+        <!-- Actions -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-gear me-2"></i> Actions
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    @if (Model.CanCancel)
+                    {
+                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#cancelModal">
+                            <i class="bi bi-x-circle me-1"></i> Cancel Delivery
+                        </button>
+                    }
+
+                    @if (Model.CanTrack)
+                    {
+                        <button type="button" class="btn btn-primary">
+                            <i class="bi bi-geo me-1"></i> Track Live
+                        </button>
+                    }
+
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to List
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Cancel Modal -->
+<div class="modal fade" id="cancelModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form asp-action="Cancel" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="id" value="@Model.Id" />
+
+                <div class="modal-header">
+                    <h5 class="modal-title">Cancel Delivery</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p>Are you sure you want to cancel this delivery?</p>
+                    <div class="mb-0">
+                        <label class="form-label">Reason for cancellation</label>
+                        <select name="reason" class="form-select" required>
+                            <option value="">Select a reason</option>
+                            <option value="Changed my mind">Changed my mind</option>
+                            <option value="Found alternative">Found alternative</option>
+                            <option value="Wrong address">Wrong address</option>
+                            <option value="Package not ready">Package not ready</option>
+                            <option value="Other">Other</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="submit" class="btn btn-danger">Cancel Delivery</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #routeMap { z-index: 1; }
+
+        .timeline {
+            position: relative;
+            padding-left: 30px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 10px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 20px;
+        }
+        .timeline-item.completed .timeline-icon {
+            background: #198754;
+            color: white;
+        }
+        .timeline-item.current .timeline-icon {
+            background: #0d6efd;
+            color: white;
+        }
+        .timeline-icon {
+            position: absolute;
+            left: -30px;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }
+        .timeline-content {
+            padding-left: 10px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var pickupLat = @Model.Pickup.Lat;
+            var pickupLng = @Model.Pickup.Lng;
+            var dropLat = @Model.Drop.Lat;
+            var dropLng = @Model.Drop.Lng;
+
+            var map = L.map('routeMap');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Markers
+            var pickupMarker = L.marker([pickupLat, pickupLng]).addTo(map);
+            pickupMarker.bindPopup('<strong>Pickup</strong><br>@Model.Pickup.Address.Replace("'", "\\'")');
+
+            var dropMarker = L.marker([dropLat, dropLng]).addTo(map);
+            dropMarker.bindPopup('<strong>Drop</strong><br>@Model.Drop.Address.Replace("'", "\\'")');
+
+            // Route line
+            L.polyline([[pickupLat, pickupLng], [dropLat, dropLng]], {
+                color: '#0d6efd',
+                weight: 3,
+                dashArray: '10, 10'
+            }).addTo(map);
+
+            // Fit bounds
+            var bounds = L.latLngBounds([[pickupLat, pickupLng], [dropLat, dropLng]]);
+            map.fitBounds(bounds, { padding: [30, 30] });
+        });
+    </script>
+}

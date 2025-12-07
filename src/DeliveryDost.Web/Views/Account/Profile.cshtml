@@ -1,0 +1,217 @@
+@model DeliveryDost.Web.ViewModels.Account.ProfileViewModel
+@{ ViewData["Title"] = "My Profile"; }
+
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-person-circle me-2"></i>My Profile</h1>
+    <p class="page-subtitle">View and manage your account information</p>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card text-center">
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="avatar-circle mx-auto mb-3" style="width: 100px; height: 100px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+                        <i class="bi bi-person-fill text-white" style="font-size: 3rem;"></i>
+                    </div>
+                </div>
+                <h4 class="mb-1">@(Model.FullName ?? Model.Phone)</h4>
+                <p class="text-muted mb-2">@Model.Phone</p>
+                @{
+                    var roleBadgeClass = Model.Role switch
+                    {
+                        "SuperAdmin" => "bg-danger",
+                        "DPCM" => "bg-purple",
+                        "DP" => "bg-warning text-dark",
+                        "BC" or "DBC" => "bg-info",
+                        "EC" => "bg-success",
+                        _ => "bg-secondary"
+                    };
+                    var roleDisplayName = Model.Role switch
+                    {
+                        "SuperAdmin" => "ADMIN",
+                        "DPCM" => "MANAGER",
+                        "DP" => "DELIVERY PARTNER",
+                        "BC" or "DBC" => "BUSINESS",
+                        "EC" => "CONSUMER",
+                        _ => Model.Role
+                    };
+                }
+                <span class="badge @roleBadgeClass px-3 py-2">@roleDisplayName</span>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header">
+                <i class="bi bi-shield-check me-2"></i>Account Status
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Status</span>
+                    <span class="badge @(Model.IsActive ? "bg-success" : "bg-danger")">@(Model.IsActive ? "Active" : "Inactive")</span>
+                </div>
+                <div class="d-flex justify-content-between mb-2">
+                    <span class="text-muted">Member Since</span>
+                    <span>@Model.CreatedAt.ToString("MMM yyyy")</span>
+                </div>
+                <div class="d-flex justify-content-between">
+                    <span class="text-muted">User ID</span>
+                    <small class="text-muted font-monospace">@Model.UserId.ToString().Substring(0, 8)...</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span><i class="bi bi-info-circle me-2"></i>Basic Information</span>
+                <button type="button" class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    <i class="bi bi-pencil me-1"></i>Edit
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Full Name</label>
+                        <p class="mb-0 fw-medium">@(Model.FullName ?? "Not set")</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Phone Number</label>
+                        <p class="mb-0 fw-medium">@Model.Phone</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Email</label>
+                        <p class="mb-0 fw-medium">@(Model.Email ?? "Not set")</p>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <label class="form-label text-muted small">Role</label>
+                        <p class="mb-0 fw-medium">@roleDisplayName</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (Model.Role == "DP")
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-truck me-2"></i>Vehicle Information
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Vehicle Type</label>
+                            <p class="mb-0 fw-medium">@(Model.VehicleType ?? "Not set")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Vehicle Number</label>
+                            <p class="mb-0 fw-medium">@(Model.VehicleNumber ?? "Not set")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (Model.Role == "BC" || Model.Role == "DBC")
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-building me-2"></i>Business Information
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Business Name</label>
+                            <p class="mb-0 fw-medium">@(Model.BusinessName ?? "Not set")</p>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label class="form-label text-muted small">Business Type</label>
+                            <p class="mb-0 fw-medium">@(Model.BusinessType ?? "Not set")</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-gear me-2"></i>Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <a asp-controller="Wallet" asp-action="Index" class="btn btn-outline-primary w-100">
+                            <i class="bi bi-wallet2 me-2"></i>Wallet
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a asp-controller="Delivery" asp-action="Index" class="btn btn-outline-info w-100">
+                            <i class="bi bi-box-seam me-2"></i>Deliveries
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a asp-controller="Complaint" asp-action="Index" class="btn btn-outline-warning w-100">
+                            <i class="bi bi-chat-dots me-2"></i>Complaints
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card border-danger">
+            <div class="card-header text-danger">
+                <i class="bi bi-exclamation-triangle me-2"></i>Danger Zone
+            </div>
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <strong>Logout from all devices</strong>
+                        <p class="text-muted small mb-0">This will log you out from all devices including this one.</p>
+                    </div>
+                    <form asp-controller="Account" asp-action="Logout" method="post">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-outline-danger">
+                            <i class="bi bi-box-arrow-right me-1"></i>Logout
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal fade" id="editProfileModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title"><i class="bi bi-pencil me-2"></i>Edit Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form asp-controller="Account" asp-action="UpdateProfile" method="post">
+                @Html.AntiForgeryToken()
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Full Name</label>
+                        <input type="text" name="FullName" class="form-control" value="@Model.FullName" placeholder="Enter your full name" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Email</label>
+                        <input type="email" name="Email" class="form-control" value="@Model.Email" placeholder="Enter your email" />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .bg-purple { background-color: #6f42c1 !important; }
+    </style>
+}

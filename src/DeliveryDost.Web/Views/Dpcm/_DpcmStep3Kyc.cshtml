@@ -1,0 +1,60 @@
+@model DeliveryDost.Web.ViewModels.Dpcm.DpcmRegistrationViewModel
+
+<h4 class="mb-4"><i class="bi bi-file-earmark-check me-2"></i>KYC Documents</h4>
+<p class="text-muted mb-4">Verify your identity to start earning</p>
+
+<form asp-action="CompleteRegistration" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-credit-card me-2"></i>PAN Card Verification</h5>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="KycDocuments.PAN" class="form-label"></label>
+                    <input asp-for="KycDocuments.PAN" class="form-control text-uppercase" placeholder="ABCDE1234F" maxlength="10" />
+                    <span asp-validation-for="KycDocuments.PAN" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="KycDocuments.NameAsPerPan" class="form-label"></label>
+                    <input asp-for="KycDocuments.NameAsPerPan" class="form-control" placeholder="Name exactly as on PAN" />
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-person-badge me-2"></i>Aadhaar Verification (Optional)</h5>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="KycDocuments.AadhaarLast4" class="form-label"></label>
+                    <input asp-for="KycDocuments.AadhaarLast4" class="form-control" placeholder="Last 4 digits" maxlength="4" />
+                </div>
+            </div>
+        </div>
+
+        <p class="text-muted small">
+            Aadhaar verification is optional for DPCM but helps in faster approval.
+        </p>
+    </div>
+
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>
+        <strong>Almost done!</strong> After completing registration, you'll receive your unique referral code to start onboarding delivery partners.
+    </div>
+
+    <div class="btn-group-nav">
+        <button type="submit" asp-action="GoToStep" asp-route-step="2" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button type="submit" class="btn btn-success btn-lg">
+            <i class="bi bi-check-circle me-1"></i> Complete Registration
+        </button>
+    </div>
+</form>

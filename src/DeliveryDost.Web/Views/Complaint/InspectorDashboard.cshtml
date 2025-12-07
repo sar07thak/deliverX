@@ -1,0 +1,77 @@
+@model DeliveryDost.Web.ViewModels.Complaint.InspectorDashboardViewModel
+@{ ViewData["Title"] = "Inspector Dashboard"; }
+
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-shield-check me-2"></i>Inspector Dashboard</h1>
+    <p class="page-subtitle">Manage and resolve complaints</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3"><div class="card bg-danger text-white"><div class="card-body text-center"><h2>@Model.OpenCases</h2><small>Open Cases</small></div></div></div>
+    <div class="col-md-3"><div class="card bg-warning"><div class="card-body text-center"><h2>@Model.InProgressCases</h2><small>In Progress</small></div></div></div>
+    <div class="col-md-3"><div class="card bg-success text-white"><div class="card-body text-center"><h2>@Model.ResolvedToday</h2><small>Resolved</small></div></div></div>
+    <div class="col-md-3"><div class="card bg-info text-white"><div class="card-body text-center"><h2>@Model.AvgResolutionHours.ToString("F1")h</h2><small>Avg Resolution</small></div></div></div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-danger text-white"><i class="bi bi-inbox me-2"></i>Unassigned Cases (@Model.UnassignedComplaints.Count)</div>
+            <div class="card-body p-0">
+                @if (Model.UnassignedComplaints.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var c in Model.UnassignedComplaints)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@c.ComplaintNumber</strong> - @c.Subject
+                                    <br /><small class="text-muted">@c.Category | @c.CreatedAt.ToString("dd MMM")</small>
+                                </div>
+                                <form asp-action="AssignToMe" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <input type="hidden" name="complaintId" value="@c.Id" />
+                                    <button type="submit" class="btn btn-sm btn-primary">Take</button>
+                                </form>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4"><i class="bi bi-check-circle text-success fs-1"></i><p class="mt-2">No unassigned cases</p></div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card h-100">
+            <div class="card-header bg-warning"><i class="bi bi-person-workspace me-2"></i>My Active Cases (@Model.AssignedComplaints.Count)</div>
+            <div class="card-body p-0">
+                @if (Model.AssignedComplaints.Any())
+                {
+                    <div class="list-group list-group-flush">
+                        @foreach (var c in Model.AssignedComplaints)
+                        {
+                            <div class="list-group-item d-flex justify-content-between align-items-center">
+                                <div>
+                                    <strong>@c.ComplaintNumber</strong> - @c.Subject
+                                    <br /><small class="text-muted">@c.Category | <span class="badge @c.SeverityBadgeClass">@c.Severity</span></small>
+                                </div>
+                                <div>
+                                    <a asp-action="Details" asp-route-id="@c.Id" class="btn btn-sm btn-outline-primary me-1"><i class="bi bi-eye"></i></a>
+                                    <a asp-action="Resolve" asp-route-id="@c.Id" class="btn btn-sm btn-success"><i class="bi bi-check"></i></a>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4"><i class="bi bi-inbox text-muted fs-1"></i><p class="mt-2">No active cases</p></div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

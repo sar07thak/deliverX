@@ -1,0 +1,108 @@
+@model DeliveryDost.Web.ViewModels.Business.SubscribeViewModel
+
+<div class="page-header">
+    <h1 class="page-title">Subscribe to @Model.PlanName</h1>
+    <p class="page-subtitle">Complete your subscription setup</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-header">
+                <span><i class="bi bi-star me-2"></i>Subscription Details</span>
+            </div>
+            <div class="card-body">
+                <form asp-action="Subscribe" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="PlanId" />
+                    <input type="hidden" asp-for="PlanName" />
+                    <input type="hidden" asp-for="Price" />
+
+                    <div class="mb-4">
+                        <div class="plan-summary p-3 bg-light rounded">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">Plan</span>
+                                <span>@Model.PlanName</span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-bold">Billing Cycle</span>
+                                <span>@(Model.BillingCycle == "ANNUAL" ? "Annual" : "Monthly")</span>
+                            </div>
+                            <hr />
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="fw-bold fs-5">Amount</span>
+                                <span class="fs-5 text-primary">&#8377;@Model.Price.ToString("N0")</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label asp-for="BillingCycle" class="form-label">Billing Cycle</label>
+                        <div class="btn-group w-100" role="group">
+                            <input type="radio" class="btn-check" name="BillingCycle" id="monthly" value="MONTHLY"
+                                   @(Model.BillingCycle == "MONTHLY" ? "checked" : "") />
+                            <label class="btn btn-outline-primary" for="monthly">Monthly</label>
+
+                            <input type="radio" class="btn-check" name="BillingCycle" id="annual" value="ANNUAL"
+                                   @(Model.BillingCycle == "ANNUAL" ? "checked" : "") />
+                            <label class="btn btn-outline-primary" for="annual">Annual (Save 17%)</label>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" asp-for="AutoRenew" />
+                            <label class="form-check-label" asp-for="AutoRenew">
+                                Enable auto-renewal
+                            </label>
+                            <small class="d-block text-muted">
+                                Your subscription will automatically renew at the end of each billing period.
+                            </small>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" asp-for="AgreeToTerms" />
+                            <label class="form-check-label" asp-for="AgreeToTerms">
+                                I agree to the <a href="#" target="_blank">Terms & Conditions</a> and
+                                <a href="#" target="_blank">Subscription Policy</a>
+                            </label>
+                            <span asp-validation-for="AgreeToTerms" class="text-danger d-block"></span>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span>Wallet Balance</span>
+                        <span class="@(Model.HasSufficientBalance ? "text-success" : "text-danger") fw-bold">
+                            &#8377;@Model.WalletBalance.ToString("N0")
+                        </span>
+                    </div>
+
+                    @if (!Model.HasSufficientBalance)
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            Insufficient balance. Please add &#8377;@((Model.Price - Model.WalletBalance).ToString("N0")) to your wallet.
+                        </div>
+                        <a asp-controller="Wallet" asp-action="TopUp" class="btn btn-primary w-100 mb-2">
+                            <i class="bi bi-wallet2 me-1"></i> Add Funds
+                        </a>
+                    }
+                    else
+                    {
+                        <button type="submit" class="btn btn-primary w-100 mb-2">
+                            <i class="bi bi-check-circle me-1"></i> Confirm & Subscribe
+                        </button>
+                    }
+
+                    <a asp-action="Index" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Plans
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

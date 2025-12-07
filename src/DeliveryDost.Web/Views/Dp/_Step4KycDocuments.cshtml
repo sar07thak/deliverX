@@ -1,0 +1,196 @@
+@model DeliveryDost.Web.ViewModels.Dp.DpRegistrationViewModel
+@using DeliveryDost.Web.ViewModels.Dp
+
+<h4 class="mb-4"><i class="bi bi-file-earmark-check me-2"></i>KYC Documents</h4>
+<p class="text-muted mb-4">Verify your identity to start earning</p>
+
+<form asp-action="SaveKycDocuments" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <!-- PAN Verification -->
+    <div class="form-section">
+        <h5 class="form-section-title">
+            <i class="bi bi-credit-card me-2"></i>PAN Card
+            @if (!string.IsNullOrEmpty(Model.KycDocuments.PANStatus))
+            {
+                <span class="badge @(Model.KycDocuments.PANStatus == "VERIFIED" ? "bg-success" : "bg-warning") ms-2">
+                    @Model.KycDocuments.PANStatus
+                </span>
+            }
+        </h5>
+
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="KycDocuments.PAN" class="form-label"></label>
+                    <input asp-for="KycDocuments.PAN" class="form-control text-uppercase" placeholder="ABCDE1234F" maxlength="10" />
+                    <span asp-validation-for="KycDocuments.PAN" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="KycDocuments.NameAsPerPan" class="form-label"></label>
+                    <input asp-for="KycDocuments.NameAsPerPan" class="form-control" placeholder="Name exactly as on PAN card" />
+                    <span asp-validation-for="KycDocuments.NameAsPerPan" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Aadhaar Verification -->
+    <div class="form-section">
+        <h5 class="form-section-title">
+            <i class="bi bi-person-badge me-2"></i>Aadhaar Verification
+            @if (!string.IsNullOrEmpty(Model.KycDocuments.AadhaarStatus))
+            {
+                <span class="badge @(Model.KycDocuments.AadhaarStatus == "VERIFIED" ? "bg-success" : "bg-warning") ms-2">
+                    @Model.KycDocuments.AadhaarStatus
+                </span>
+            }
+        </h5>
+
+        <div class="mb-4">
+            <label class="form-label">Verification Method</label>
+            <div class="verification-methods">
+                @foreach (var method in KycDocumentsStepViewModel.VerificationMethods)
+                {
+                    <div class="method-option">
+                        <input type="radio" asp-for="KycDocuments.AadhaarMethod" value="@method.Value" id="method_@method.Value" />
+                        <label for="method_@method.Value">
+                            <i class="bi @(method.Value == "DIGILOCKER" ? "bi-shield-check" : "bi-upload")"></i>
+                            <div>
+                                <strong>@method.Text</strong>
+                                <small class="d-block text-muted">
+                                    @(method.Value == "DIGILOCKER" ? "Instant verification via government portal" : "Upload front and back of your Aadhaar")
+                                </small>
+                            </div>
+                        </label>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <div id="manualUploadSection" style="display: none;">
+            <div class="row">
+                <div class="col-md-4">
+                    <div class="mb-3">
+                        <label asp-for="KycDocuments.AadhaarLast4" class="form-label"></label>
+                        <input asp-for="KycDocuments.AadhaarLast4" class="form-control" placeholder="Last 4 digits" maxlength="4" />
+                        <span asp-validation-for="KycDocuments.AadhaarLast4" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Aadhaar Front</label>
+                        <input type="file" class="form-control" name="aadhaarFront" accept="image/*,.pdf" />
+                        <small class="text-muted">JPG, PNG or PDF (max 2MB)</small>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="mb-3">
+                        <label class="form-label">Aadhaar Back</label>
+                        <input type="file" class="form-control" name="aadhaarBack" accept="image/*,.pdf" />
+                        <small class="text-muted">JPG, PNG or PDF (max 2MB)</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="digilockerInfo" class="alert alert-info">
+            <i class="bi bi-info-circle me-2"></i>
+            <strong>DigiLocker:</strong> You will be redirected to the government DigiLocker portal to authorize Aadhaar access. This is the fastest and most secure method.
+        </div>
+    </div>
+
+    <div class="alert alert-secondary">
+        <h6><i class="bi bi-shield-lock me-2"></i>Your data is secure</h6>
+        <small>
+            Your documents are encrypted and stored securely. We only use them for verification purposes as required by law.
+            Aadhaar numbers are masked and only last 4 digits are stored.
+        </small>
+    </div>
+
+    <div class="btn-group-nav">
+        <button type="submit" asp-action="GoToStep" asp-route-step="3" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button type="submit" class="btn btn-primary">
+            Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+    </div>
+</form>
+
+<style>
+    .verification-methods {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .method-option {
+        position: relative;
+    }
+
+    .method-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+    }
+
+    .method-option label {
+        display: flex;
+        align-items: flex-start;
+        gap: 1rem;
+        padding: 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .method-option label i {
+        font-size: 1.5rem;
+        color: #6c757d;
+        margin-top: 3px;
+    }
+
+    .method-option input:checked + label {
+        border-color: var(--primary-color, #0d6efd);
+        background: rgba(13, 110, 253, 0.05);
+    }
+
+    .method-option input:checked + label i {
+        color: var(--primary-color, #0d6efd);
+    }
+
+    .method-option label:hover {
+        border-color: #adb5bd;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const methodRadios = document.querySelectorAll('input[name="KycDocuments.AadhaarMethod"]');
+        const manualSection = document.getElementById('manualUploadSection');
+        const digilockerInfo = document.getElementById('digilockerInfo');
+
+        function toggleMethod() {
+            const selected = document.querySelector('input[name="KycDocuments.AadhaarMethod"]:checked');
+            if (selected && selected.value === 'MANUAL_UPLOAD') {
+                manualSection.style.display = 'block';
+                digilockerInfo.style.display = 'none';
+            } else {
+                manualSection.style.display = 'none';
+                digilockerInfo.style.display = 'block';
+            }
+        }
+
+        methodRadios.forEach(radio => {
+            radio.addEventListener('change', toggleMethod);
+        });
+
+        toggleMethod();
+    });
+</script>

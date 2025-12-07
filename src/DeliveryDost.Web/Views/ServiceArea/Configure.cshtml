@@ -1,0 +1,287 @@
+@model DeliveryDost.Web.ViewModels.ServiceArea.ServiceAreaConfigureViewModel
+@{
+    ViewData["Title"] = Model.ServiceAreaId.HasValue ? "Edit Service Area" : "Set Up Service Area";
+    var isEdit = Model.ServiceAreaId.HasValue;
+}
+
+<div class="page-header">
+    <h1 class="page-title">@ViewData["Title"]</h1>
+    <p class="page-subtitle">Click on the map to set your service area center, then adjust the radius</p>
+</div>
+
+<form asp-action="Configure" method="post" id="serviceAreaForm">
+    @Html.AntiForgeryToken()
+
+    <div class="row">
+        <!-- Map Column -->
+        <div class="col-lg-8 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-map me-2"></i> Select Your Service Area
+                </div>
+                <div class="card-body p-0">
+                    <!-- Search Box -->
+                    <div class="p-3 border-bottom">
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-search"></i></span>
+                            <input type="text" id="addressSearch" class="form-control" placeholder="Search for a location..." />
+                            <button type="button" id="searchBtn" class="btn btn-outline-primary">Search</button>
+                        </div>
+                        <small class="text-muted">Or click directly on the map to set the center point</small>
+                    </div>
+
+                    <!-- Map -->
+                    <div id="configMap" style="height: 450px;"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Settings Column -->
+        <div class="col-lg-4 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-sliders me-2"></i> Service Area Settings
+                </div>
+                <div class="card-body">
+                    <!-- Hidden fields for lat/lng -->
+                    <input type="hidden" asp-for="CenterLat" id="centerLat" />
+                    <input type="hidden" asp-for="CenterLng" id="centerLng" />
+                    <input type="hidden" asp-for="ServiceAreaId" />
+
+                    <!-- Location Display -->
+                    <div class="mb-3">
+                        <label class="form-label">Selected Location</label>
+                        <div id="selectedLocation" class="form-control-plaintext border rounded p-2 bg-light">
+                            @if (Model.CenterLat != 0)
+                            {
+                                <span>@Model.CenterLat.ToString("F4"), @Model.CenterLng.ToString("F4")</span>
+                            }
+                            else
+                            {
+                                <span class="text-muted">Click on the map to select</span>
+                            }
+                        </div>
+                        <span asp-validation-for="CenterLat" class="text-danger"></span>
+                    </div>
+
+                    <!-- Area Name -->
+                    <div class="mb-3">
+                        <label asp-for="AreaName" class="form-label">Area Name (Optional)</label>
+                        <input asp-for="AreaName" class="form-control" placeholder="e.g., Jaipur Central" />
+                        <span asp-validation-for="AreaName" class="text-danger"></span>
+                    </div>
+
+                    <!-- Radius Slider -->
+                    <div class="mb-3">
+                        <label asp-for="RadiusKm" class="form-label">
+                            Radius: <strong id="radiusDisplay">@Model.RadiusKm</strong> km
+                        </label>
+                        <input type="range" asp-for="RadiusKm" class="form-range" min="1" max="50" step="1" id="radiusSlider" />
+                        <div class="d-flex justify-content-between">
+                            <small class="text-muted">1 km</small>
+                            <small class="text-muted">50 km</small>
+                        </div>
+                        <span asp-validation-for="RadiusKm" class="text-danger"></span>
+                    </div>
+
+                    <!-- Coverage Estimate -->
+                    <div class="mb-3">
+                        <label class="form-label">Estimated Coverage</label>
+                        <div class="alert alert-info py-2 mb-0">
+                            <i class="bi bi-rulers me-1"></i>
+                            <span id="coverageEstimate">--</span>
+                        </div>
+                    </div>
+
+                    <!-- Allow Drop Outside -->
+                    <div class="mb-4">
+                        <div class="form-check form-switch">
+                            <input asp-for="AllowDropOutsideArea" class="form-check-input" type="checkbox" />
+                            <label asp-for="AllowDropOutsideArea" class="form-check-label">
+                                Allow drops outside area
+                            </label>
+                        </div>
+                        <small class="text-muted">Accept deliveries where pickup is in your area but drop is outside</small>
+                    </div>
+
+                    <hr />
+
+                    <!-- Submit Buttons -->
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary btn-lg" id="saveBtn">
+                            <i class="bi bi-check-circle me-1"></i>
+                            @(isEdit ? "Update Service Area" : "Save Service Area")
+                        </button>
+                        <a asp-action="Index" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left me-1"></i> Cancel
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Radius Buttons -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <i class="bi bi-lightning me-2"></i> Quick Select Radius
+                </div>
+                <div class="card-body">
+                    <div class="d-flex flex-wrap gap-2">
+                        <button type="button" class="btn btn-outline-primary quick-radius" data-radius="3">3 km</button>
+                        <button type="button" class="btn btn-outline-primary quick-radius" data-radius="5">5 km</button>
+                        <button type="button" class="btn btn-outline-primary quick-radius" data-radius="10">10 km</button>
+                        <button type="button" class="btn btn-outline-primary quick-radius" data-radius="15">15 km</button>
+                        <button type="button" class="btn btn-outline-primary quick-radius" data-radius="25">25 km</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #configMap {
+            z-index: 1;
+            cursor: crosshair;
+        }
+        .quick-radius.active {
+            background-color: var(--bs-primary);
+            color: white;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial values
+            var initialLat = @Model.CenterLat;
+            var initialLng = @Model.CenterLng;
+            var initialRadius = @Model.RadiusKm;
+
+            // If no initial location, use Jaipur as default
+            if (initialLat === 0 && initialLng === 0) {
+                initialLat = 26.9124;
+                initialLng = 75.7873;
+            }
+
+            // Initialize map
+            var map = L.map('configMap').setView([initialLat, initialLng], 12);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors'
+            }).addTo(map);
+
+            // Create marker and circle
+            var marker = L.marker([initialLat, initialLng], { draggable: true }).addTo(map);
+            var circle = L.circle([initialLat, initialLng], {
+                color: '#0d6efd',
+                fillColor: '#0d6efd',
+                fillOpacity: 0.2,
+                radius: initialRadius * 1000
+            }).addTo(map);
+
+            // Update form values and display
+            function updateLocation(lat, lng) {
+                document.getElementById('centerLat').value = lat.toFixed(6);
+                document.getElementById('centerLng').value = lng.toFixed(6);
+                document.getElementById('selectedLocation').innerHTML = lat.toFixed(4) + ', ' + lng.toFixed(4);
+
+                marker.setLatLng([lat, lng]);
+                circle.setLatLng([lat, lng]);
+            }
+
+            function updateRadius(radiusKm) {
+                document.getElementById('radiusSlider').value = radiusKm;
+                document.getElementById('radiusDisplay').textContent = radiusKm;
+                circle.setRadius(radiusKm * 1000);
+
+                // Calculate coverage area
+                var areaSqKm = Math.PI * radiusKm * radiusKm;
+                document.getElementById('coverageEstimate').textContent = areaSqKm.toFixed(1) + ' sq km';
+
+                // Fit map to circle
+                map.fitBounds(circle.getBounds());
+
+                // Update quick buttons
+                document.querySelectorAll('.quick-radius').forEach(function(btn) {
+                    btn.classList.toggle('active', parseInt(btn.dataset.radius) === parseInt(radiusKm));
+                });
+            }
+
+            // Initialize with existing values
+            if (@Model.CenterLat !== 0) {
+                updateLocation(initialLat, initialLng);
+            }
+            updateRadius(initialRadius);
+
+            // Map click handler
+            map.on('click', function(e) {
+                updateLocation(e.latlng.lat, e.latlng.lng);
+            });
+
+            // Marker drag handler
+            marker.on('dragend', function(e) {
+                var pos = marker.getLatLng();
+                updateLocation(pos.lat, pos.lng);
+            });
+
+            // Radius slider handler
+            document.getElementById('radiusSlider').addEventListener('input', function() {
+                updateRadius(parseInt(this.value));
+            });
+
+            // Quick radius buttons
+            document.querySelectorAll('.quick-radius').forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    updateRadius(parseInt(this.dataset.radius));
+                });
+            });
+
+            // Address search (using Nominatim - free OpenStreetMap geocoding)
+            document.getElementById('searchBtn').addEventListener('click', function() {
+                var query = document.getElementById('addressSearch').value;
+                if (!query) return;
+
+                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ', India'))
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data && data.length > 0) {
+                            var lat = parseFloat(data[0].lat);
+                            var lng = parseFloat(data[0].lon);
+                            updateLocation(lat, lng);
+                            map.setView([lat, lng], 13);
+                        } else {
+                            alert('Location not found. Try a different search term.');
+                        }
+                    })
+                    .catch(function(err) {
+                        console.error('Search error:', err);
+                        alert('Search failed. Please try again.');
+                    });
+            });
+
+            // Enter key for search
+            document.getElementById('addressSearch').addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    document.getElementById('searchBtn').click();
+                }
+            });
+
+            // Form validation
+            document.getElementById('serviceAreaForm').addEventListener('submit', function(e) {
+                var lat = parseFloat(document.getElementById('centerLat').value);
+                var lng = parseFloat(document.getElementById('centerLng').value);
+
+                if (isNaN(lat) || isNaN(lng) || lat === 0 || lng === 0) {
+                    e.preventDefault();
+                    alert('Please select a location on the map');
+                    return false;
+                }
+            });
+        });
+    </script>
+}

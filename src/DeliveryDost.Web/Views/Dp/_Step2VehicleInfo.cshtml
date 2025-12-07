@@ -1,0 +1,170 @@
+@model DeliveryDost.Web.ViewModels.Dp.DpRegistrationViewModel
+@using DeliveryDost.Web.ViewModels.Dp
+
+<h4 class="mb-4"><i class="bi bi-truck me-2"></i>Vehicle Information</h4>
+
+<form asp-action="SaveVehicleInfo" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <div class="mb-4">
+        <label asp-for="VehicleInfo.VehicleType" class="form-label">Select Vehicle Type</label>
+        <div class="vehicle-type-grid">
+            @foreach (var vehicle in VehicleInfoStepViewModel.VehicleTypes)
+            {
+                var iconClass = vehicle.Value switch
+                {
+                    "BICYCLE" => "bi-bicycle",
+                    "TWO_WHEELER" => "bi-scooter",
+                    "THREE_WHEELER" => "bi-truck-front",
+                    "FOUR_WHEELER" => "bi-car-front",
+                    "TRUCK" => "bi-truck",
+                    _ => "bi-truck"
+                };
+                var isChecked = Model.VehicleInfo.VehicleType == vehicle.Value;
+                <div class="vehicle-option">
+                    <input type="radio"
+                           name="VehicleInfo.VehicleType"
+                           value="@vehicle.Value"
+                           id="vehicle_@vehicle.Value"
+                           @(isChecked ? "checked" : "") />
+                    <label for="vehicle_@vehicle.Value">
+                        <i class="bi @iconClass"></i>
+                        <span>@vehicle.Text</span>
+                    </label>
+                </div>
+            }
+        </div>
+        <span asp-validation-for="VehicleInfo.VehicleType" class="text-danger"></span>
+    </div>
+
+    <div class="row" id="vehicleDetails" style="display: none;">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="VehicleInfo.VehicleNumber" class="form-label"></label>
+                <input asp-for="VehicleInfo.VehicleNumber" class="form-control text-uppercase" placeholder="MH12AB1234" />
+                <span asp-validation-for="VehicleInfo.VehicleNumber" class="text-danger"></span>
+                <small class="text-muted">Format: XX00XX0000</small>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="VehicleInfo.DrivingLicenseNumber" class="form-label"></label>
+                <input asp-for="VehicleInfo.DrivingLicenseNumber" class="form-control text-uppercase" placeholder="Driving License Number" />
+                <span asp-validation-for="VehicleInfo.DrivingLicenseNumber" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="VehicleInfo.DrivingLicenseExpiry" class="form-label"></label>
+                <input asp-for="VehicleInfo.DrivingLicenseExpiry" class="form-control" type="date" min="@DateTime.Today.ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="VehicleInfo.DrivingLicenseExpiry" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        <strong>Note:</strong> Vehicle documents (RC, License) will be verified during KYC. Keep them handy for the next steps.
+    </div>
+
+    <div class="btn-group-nav">
+        <button type="submit" asp-action="GoToStep" asp-route-step="1" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button type="submit" class="btn btn-primary">
+            Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+    </div>
+</form>
+
+<style>
+    .vehicle-type-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+        gap: 1rem;
+    }
+
+    .vehicle-option {
+        position: relative;
+    }
+
+    .vehicle-option input[type="radio"] {
+        position: absolute;
+        opacity: 0;
+        width: 100%;
+        height: 100%;
+        cursor: pointer;
+        z-index: 1;
+    }
+
+    .vehicle-option label {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 1.5rem 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+        position: relative;
+    }
+
+    .vehicle-option label i {
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+        color: #6c757d;
+    }
+
+    .vehicle-option label span {
+        font-size: 0.85rem;
+        text-align: center;
+    }
+
+    .vehicle-option input:checked + label {
+        border-color: var(--primary-color, #0d6efd);
+        background: rgba(13, 110, 253, 0.1);
+        box-shadow: 0 0 0 3px rgba(13, 110, 253, 0.15);
+    }
+
+    .vehicle-option input:checked + label i {
+        color: var(--primary-color, #0d6efd);
+    }
+
+    .vehicle-option input:checked + label span {
+        font-weight: 600;
+        color: var(--primary-color, #0d6efd);
+    }
+
+    .vehicle-option label:hover {
+        border-color: #adb5bd;
+        background: rgba(0, 0, 0, 0.02);
+    }
+
+    .vehicle-option input:focus + label {
+        outline: 2px solid var(--primary-color, #0d6efd);
+        outline-offset: 2px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const vehicleRadios = document.querySelectorAll('input[name="VehicleInfo.VehicleType"]');
+        const vehicleDetails = document.getElementById('vehicleDetails');
+
+        function toggleVehicleDetails() {
+            const selected = document.querySelector('input[name="VehicleInfo.VehicleType"]:checked');
+            if (selected && selected.value !== 'BICYCLE') {
+                vehicleDetails.style.display = 'flex';
+            } else {
+                vehicleDetails.style.display = 'none';
+            }
+        }
+
+        vehicleRadios.forEach(radio => {
+            radio.addEventListener('change', toggleVehicleDetails);
+        });
+
+        toggleVehicleDetails();
+    });
+</script>

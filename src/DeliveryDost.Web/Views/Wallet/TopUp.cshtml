@@ -1,0 +1,194 @@
+@model DeliveryDost.Web.ViewModels.Wallet.TopUpViewModel
+@{
+    ViewData["Title"] = "Top Up Wallet";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-plus-circle me-2"></i>Add Money
+            </h1>
+            <p class="page-subtitle">Top up your wallet balance</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <!-- Current Balance -->
+        <div class="card mb-4 bg-light">
+            <div class="card-body text-center">
+                <small class="text-muted d-block">Current Balance</small>
+                <h3 class="mb-0">₹@Model.CurrentBalance.ToString("N2")</h3>
+            </div>
+        </div>
+
+        <form asp-action="TopUp" method="post">
+            @Html.AntiForgeryToken()
+
+            <!-- Amount Selection -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-cash me-2"></i>Select Amount
+                </div>
+                <div class="card-body">
+                    <!-- Quick Amounts -->
+                    <div class="row g-2 mb-3">
+                        @foreach (var amount in DeliveryDost.Web.ViewModels.Wallet.TopUpViewModel.QuickAmounts)
+                        {
+                            <div class="col-4">
+                                <button type="button" class="btn btn-outline-primary w-100 quick-amount" data-amount="@amount">
+                                    ₹@amount.ToString("N0")
+                                </button>
+                            </div>
+                        }
+                    </div>
+
+                    <!-- Custom Amount -->
+                    <div class="mb-0">
+                        <label asp-for="Amount" class="form-label">Enter Amount</label>
+                        <div class="input-group input-group-lg">
+                            <span class="input-group-text">₹</span>
+                            <input asp-for="Amount" type="number" class="form-control" id="amountInput" min="10" max="100000" step="1" />
+                        </div>
+                        <span asp-validation-for="Amount" class="text-danger"></span>
+                        <small class="text-muted">Minimum: ₹10, Maximum: ₹1,00,000</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-credit-card me-2"></i>Payment Method
+                </div>
+                <div class="card-body">
+                    @foreach (var method in DeliveryDost.Web.ViewModels.Wallet.TopUpViewModel.PaymentMethods)
+                    {
+                        <div class="form-check payment-method-card mb-2 @(method.Value == "UPI" ? "active" : "")">
+                            <input class="form-check-input" type="radio" name="PaymentMethod" id="method_@method.Value"
+                                   value="@method.Value" @(method.Value == "UPI" ? "checked" : "") />
+                            <label class="form-check-label d-flex align-items-center w-100" for="method_@method.Value">
+                                <span class="me-3">
+                                    <i class="bi @method.Icon fs-4 text-primary"></i>
+                                </span>
+                                <span class="flex-grow-1">
+                                    <strong>@method.Label</strong>
+                                    <small class="d-block text-muted">@method.Description</small>
+                                </span>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Summary -->
+            <div class="card mb-4 border-primary">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>Amount to Add</span>
+                        <span id="summaryAmount">₹@Model.Amount.ToString("N2")</span>
+                    </div>
+                    <div class="d-flex justify-content-between text-muted mb-2">
+                        <span>Processing Fee</span>
+                        <span class="text-success">FREE</span>
+                    </div>
+                    <hr />
+                    <div class="d-flex justify-content-between">
+                        <strong>Total</strong>
+                        <strong id="summaryTotal" class="text-primary">₹@Model.Amount.ToString("N2")</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-shield-check me-2"></i>Proceed to Pay
+                </button>
+            </div>
+
+            <p class="text-center text-muted small mt-3">
+                <i class="bi bi-lock me-1"></i>
+                Payments are secure and encrypted
+            </p>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .payment-method-card {
+            border: 2px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .payment-method-card:hover {
+            border-color: #0d6efd;
+            background: #f8f9fa;
+        }
+        .payment-method-card.active {
+            border-color: #0d6efd;
+            background: #e7f1ff;
+        }
+        .payment-method-card .form-check-input {
+            margin-top: 0.5rem;
+        }
+        .quick-amount.active {
+            background-color: #0d6efd;
+            color: white;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var amountInput = document.getElementById('amountInput');
+            var summaryAmount = document.getElementById('summaryAmount');
+            var summaryTotal = document.getElementById('summaryTotal');
+            var quickAmountBtns = document.querySelectorAll('.quick-amount');
+            var paymentMethods = document.querySelectorAll('.payment-method-card');
+
+            // Quick amount buttons
+            quickAmountBtns.forEach(function(btn) {
+                btn.addEventListener('click', function() {
+                    var amount = this.getAttribute('data-amount');
+                    amountInput.value = amount;
+                    updateSummary();
+
+                    // Update active state
+                    quickAmountBtns.forEach(b => b.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+
+            // Amount input change
+            amountInput.addEventListener('input', function() {
+                updateSummary();
+                quickAmountBtns.forEach(b => b.classList.remove('active'));
+            });
+
+            // Payment method selection
+            paymentMethods.forEach(function(card) {
+                card.addEventListener('click', function() {
+                    paymentMethods.forEach(c => c.classList.remove('active'));
+                    this.classList.add('active');
+                    this.querySelector('input[type="radio"]').checked = true;
+                });
+            });
+
+            function updateSummary() {
+                var amount = parseFloat(amountInput.value) || 0;
+                summaryAmount.textContent = '₹' + amount.toFixed(2);
+                summaryTotal.textContent = '₹' + amount.toFixed(2);
+            }
+        });
+    </script>
+}

@@ -1,0 +1,56 @@
+@model DeliveryDost.Web.ViewModels.Dashboard.DpcmDashboardViewModel
+@{ ViewData["Title"] = "DPCM Dashboard"; }
+
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-speedometer2 me-2"></i>Channel Manager Dashboard</h1>
+    <p class="page-subtitle">Manage your delivery partner network</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3"><div class="card border-primary"><div class="card-body text-center"><h2 class="text-primary">@Model.TotalDPs</h2><small>Total DPs</small></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card border-success"><div class="card-body text-center"><h2 class="text-success">@Model.ActiveDPs</h2><small>Active DPs</small></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card border-warning"><div class="card-body text-center"><h2 class="text-warning">@Model.PendingKyc</h2><small>Pending KYC</small></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card border-info"><div class="card-body text-center"><h2 class="text-info">@Model.MonthDeliveries</h2><small>This Month</small></div></div></div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4 mb-3"><div class="card bg-success text-white"><div class="card-body"><small class="text-white-50">Month Revenue</small><h3>₹@Model.MonthRevenue.ToString("N0")</h3></div></div></div>
+    <div class="col-md-4 mb-3"><div class="card bg-primary text-white"><div class="card-body"><small class="text-white-50">Total Revenue</small><h3>₹@Model.TotalRevenue.ToString("N0")</h3></div></div></div>
+    <div class="col-md-4 mb-3"><div class="card bg-warning"><div class="card-body"><small>Avg Rating</small><h3><i class="bi bi-star-fill"></i> @Model.AvgRating.ToString("F1")</h3></div></div></div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-graph-up me-2"></i>Monthly Deliveries</div>
+            <div class="card-body"><canvas id="deliveriesChart" height="200"></canvas></div>
+        </div>
+    </div>
+    <div class="col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header"><i class="bi bi-trophy me-2"></i>Top Performers</div>
+            <div class="card-body p-0">
+                <div class="list-group list-group-flush">
+                    @foreach (var dp in Model.TopPerformers.Take(5))
+                    { <div class="list-group-item d-flex justify-content-between"><span>@dp.Name</span><span class="badge bg-success">@dp.Deliveries deliveries</span></div> }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between"><span><i class="bi bi-lightning me-2"></i>Quick Actions</span><a asp-controller="Dashboard" asp-action="ExportCsv" asp-route-type="deliveries" class="btn btn-sm btn-outline-primary"><i class="bi bi-download me-1"></i>Export</a></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4"><a asp-controller="Dpcm" asp-action="MyDPs" class="btn btn-outline-primary w-100 mb-2"><i class="bi bi-people me-1"></i>Manage DPs</a></div>
+            <div class="col-md-4"><a asp-controller="Admin" asp-action="KycRequests" class="btn btn-outline-warning w-100 mb-2"><i class="bi bi-file-check me-1"></i>KYC Requests</a></div>
+            <div class="col-md-4"><a asp-controller="ServiceArea" asp-action="Index" class="btn btn-outline-info w-100 mb-2"><i class="bi bi-geo-alt me-1"></i>Service Areas</a></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>new Chart(document.getElementById('deliveriesChart'), { type: 'line', data: { labels: [@Html.Raw(string.Join(",", Model.MonthlyDeliveries.Select(e => $"'{e.Label}'")))], datasets: [{ label: 'Deliveries', data: [@string.Join(",", Model.MonthlyDeliveries.Select(e => e.Value))], borderColor: '#0d6efd', tension: 0.3 }] }, options: { responsive: true } });</script>
+}

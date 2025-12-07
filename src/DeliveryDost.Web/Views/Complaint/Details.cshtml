@@ -1,0 +1,103 @@
+@model DeliveryDost.Web.ViewModels.Complaint.ComplaintDetailsViewModel
+@{ ViewData["Title"] = $"Complaint #{Model.ComplaintNumber}"; }
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">Complaint #@Model.ComplaintNumber</h1>
+            <p class="page-subtitle">Filed on @Model.CreatedAt.ToString("dd MMM yyyy, hh:mm tt")</p>
+        </div>
+        <span class="badge @Model.StatusBadgeClass fs-6 px-3 py-2">@Model.Status</span>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8 mb-4">
+        <div class="card mb-4">
+            <div class="card-header"><i class="bi bi-info-circle me-2"></i>Details</div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-6"><strong>Category:</strong> @Model.Category</div>
+                    <div class="col-md-6"><strong>Severity:</strong> @Model.Severity</div>
+                </div>
+                <h5>@Model.Subject</h5>
+                <p>@Model.Description</p>
+                @if (!string.IsNullOrEmpty(Model.Resolution))
+                {
+                    <hr />
+                    <h6 class="text-success">Resolution: @Model.Resolution</h6>
+                    <p class="text-muted">@Model.ResolutionNotes</p>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header"><i class="bi bi-chat me-2"></i>Comments</div>
+            <div class="card-body">
+                @if (Model.Comments.Any())
+                {
+                    @foreach (var c in Model.Comments.OrderBy(x => x.CreatedAt))
+                    {
+                        <div class="mb-3 p-3 bg-light rounded">
+                            <strong>@c.AuthorName</strong> <small class="text-muted">@c.CreatedAt.ToString("dd MMM, hh:mm tt")</small>
+                            <p class="mb-0 mt-2">@c.Content</p>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted">No comments yet.</p>
+                }
+
+                @if (Model.CanAddComment)
+                {
+                    <form asp-action="AddComment" method="post" class="mt-3">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="complaintId" value="@Model.Id" />
+                        <div class="input-group">
+                            <input type="text" name="content" class="form-control" placeholder="Add a comment..." required />
+                            <button type="submit" class="btn btn-primary"><i class="bi bi-send"></i></button>
+                        </div>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4 mb-4">
+        <div class="card mb-4">
+            <div class="card-header">Parties</div>
+            <div class="card-body">
+                <p><strong>Raised By:</strong> @Model.RaisedByName (@Model.RaisedByType)</p>
+                @if (!string.IsNullOrEmpty(Model.AgainstName))
+                {
+                    <p><strong>Against:</strong> @Model.AgainstName (@Model.AgainstType)</p>
+                }
+                @if (!string.IsNullOrEmpty(Model.AssignedToName))
+                {
+                    <p><strong>Inspector:</strong> @Model.AssignedToName</p>
+                }
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Evidence</div>
+            <div class="card-body">
+                @if (Model.Evidences.Any())
+                {
+                    @foreach (var e in Model.Evidences)
+                    {
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-file-earmark me-2"></i>
+                            <a href="@e.FileUrl" target="_blank">@e.FileName</a>
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No evidence uploaded.</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>

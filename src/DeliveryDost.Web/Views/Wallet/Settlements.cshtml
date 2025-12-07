@@ -1,0 +1,184 @@
+@model DeliveryDost.Web.ViewModels.Wallet.SettlementListViewModel
+@{
+    ViewData["Title"] = "Settlements";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-bank me-2"></i>Settlements
+            </h1>
+            <p class="page-subtitle">Track your earnings payouts</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Wallet
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <span class="badge bg-warning text-dark p-3">
+                        <i class="bi bi-hourglass-split fs-4"></i>
+                    </span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Pending Settlement</small>
+                    <h4 class="mb-0 text-warning">₹@Model.TotalPendingAmount.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-success">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <span class="badge bg-success p-3">
+                        <i class="bi bi-check-circle fs-4"></i>
+                    </span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Total Settled</small>
+                    <h4 class="mb-0 text-success">₹@Model.TotalSettledAmount.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Wallet.SettlementListViewModel.StatusOptions, "Value", "Text", Model.StatusFilter))"></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">From Date</label>
+                <input type="date" name="fromDate" class="form-control" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To Date</label>
+                <input type="date" name="toDate" class="form-control" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Settlements List -->
+<div class="card">
+    <div class="card-body p-0">
+        @if (Model.Settlements.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Settlement #</th>
+                            <th>Date</th>
+                            <th class="text-end">Gross</th>
+                            <th class="text-end">TDS</th>
+                            <th class="text-end">Net Amount</th>
+                            <th>Payout</th>
+                            <th>Status</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var settlement in Model.Settlements)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>@settlement.SettlementNumber</strong>
+                                    <br />
+                                    <small class="text-muted">@settlement.ItemCount deliveries</small>
+                                </td>
+                                <td>
+                                    <small>@settlement.SettlementDate.ToString("dd MMM yyyy")</small>
+                                    @if (settlement.ProcessedAt.HasValue)
+                                    {
+                                        <br />
+                                        <small class="text-muted">Processed: @settlement.ProcessedAt.Value.ToString("dd MMM")</small>
+                                    }
+                                </td>
+                                <td class="text-end">₹@settlement.GrossAmount.ToString("N2")</td>
+                                <td class="text-end text-danger">-₹@settlement.TdsAmount.ToString("N2")</td>
+                                <td class="text-end">
+                                    <strong class="text-success">₹@settlement.NetAmount.ToString("N2")</strong>
+                                </td>
+                                <td>
+                                    <small>@settlement.PayoutMethod</small>
+                                </td>
+                                <td>
+                                    <span class="badge @settlement.StatusBadgeClass">@settlement.Status</span>
+                                </td>
+                                <td>
+                                    <a asp-action="SettlementDetail" asp-route-id="@settlement.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination mb-0 justify-content-center">
+                            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                                <a class="page-link" asp-action="Settlements" asp-route-page="@(Model.Page - 1)" asp-route-status="@Model.StatusFilter">Previous</a>
+                            </li>
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.Page ? "active" : "")">
+                                    <a class="page-link" asp-action="Settlements" asp-route-page="@i" asp-route-status="@Model.StatusFilter">@i</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                                <a class="page-link" asp-action="Settlements" asp-route-page="@(Model.Page + 1)" asp-route-status="@Model.StatusFilter">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-bank display-1 text-muted mb-3"></i>
+                <h5>No Settlements Yet</h5>
+                <p class="text-muted mb-0">Your settlement history will appear here once you complete deliveries.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Info Card -->
+<div class="card mt-4 border-info">
+    <div class="card-body">
+        <h6 class="card-title">
+            <i class="bi bi-info-circle text-info me-2"></i>About Settlements
+        </h6>
+        <ul class="mb-0 small text-muted">
+            <li>Settlements are processed weekly on every Monday</li>
+            <li>TDS (Tax Deducted at Source) is deducted as per government regulations</li>
+            <li>Net amount is transferred to your registered bank account</li>
+            <li>Ensure your bank details are up to date in your profile</li>
+        </ul>
+    </div>
+</div>

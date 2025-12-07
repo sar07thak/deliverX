@@ -1,0 +1,174 @@
+@model DeliveryDost.Web.ViewModels.Wallet.TransactionListViewModel
+@{
+    ViewData["Title"] = "Transactions";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-clock-history me-2"></i>Transaction History
+            </h1>
+            <p class="page-subtitle">All your wallet transactions</p>
+        </div>
+        <a asp-action="Index" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back to Wallet
+        </a>
+    </div>
+</div>
+
+<!-- Summary Cards -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-success">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <span class="badge bg-success p-3">
+                        <i class="bi bi-arrow-down fs-4"></i>
+                    </span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Total Credits (this page)</small>
+                    <h4 class="mb-0 text-success">₹@Model.TotalCredits.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-body d-flex align-items-center">
+                <div class="me-3">
+                    <span class="badge bg-danger p-3">
+                        <i class="bi bi-arrow-up fs-4"></i>
+                    </span>
+                </div>
+                <div>
+                    <small class="text-muted d-block">Total Debits (this page)</small>
+                    <h4 class="mb-0 text-danger">₹@Model.TotalDebits.ToString("N2")</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Type</label>
+                <select name="type" class="form-select" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Wallet.TransactionListViewModel.TypeOptions, "Value", "Text", Model.TypeFilter))"></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Category</label>
+                <select name="category" class="form-select" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Wallet.TransactionListViewModel.CategoryOptions, "Value", "Text", Model.CategoryFilter))"></select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">From Date</label>
+                <input type="date" name="fromDate" class="form-control" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label">To Date</label>
+                <input type="date" name="toDate" class="form-control" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="submit" class="btn btn-primary w-100">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Transactions List -->
+<div class="card">
+    <div class="card-body p-0">
+        @if (Model.Transactions.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Type</th>
+                            <th>Description</th>
+                            <th>Reference</th>
+                            <th class="text-end">Amount</th>
+                            <th class="text-end">Balance</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tx in Model.Transactions)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge @tx.CategoryBadgeClass">
+                                        <i class="bi @tx.CategoryIcon me-1"></i>
+                                        @tx.Category.Replace("_", " ")
+                                    </span>
+                                </td>
+                                <td>@tx.Description</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(tx.ReferenceId))
+                                    {
+                                        <small class="text-muted">
+                                            @tx.ReferenceType: @tx.ReferenceId.Substring(0, Math.Min(8, tx.ReferenceId.Length))...
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <span class="@tx.AmountClass fw-bold">
+                                        @tx.AmountPrefix₹@tx.Amount.ToString("N2")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <small class="text-muted">₹@tx.BalanceAfter.ToString("N2")</small>
+                                </td>
+                                <td>
+                                    <small>@tx.CreatedAt.ToString("dd MMM yyyy")</small>
+                                    <br />
+                                    <small class="text-muted">@tx.CreatedAt.ToString("hh:mm tt")</small>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Pagination -->
+            @if (Model.TotalPages > 1)
+            {
+                <div class="card-footer">
+                    <nav>
+                        <ul class="pagination mb-0 justify-content-center">
+                            <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                                <a class="page-link" asp-action="Transactions" asp-route-page="@(Model.Page - 1)" asp-route-type="@Model.TypeFilter" asp-route-category="@Model.CategoryFilter">Previous</a>
+                            </li>
+                            @for (int i = 1; i <= Model.TotalPages; i++)
+                            {
+                                <li class="page-item @(i == Model.Page ? "active" : "")">
+                                    <a class="page-link" asp-action="Transactions" asp-route-page="@i" asp-route-type="@Model.TypeFilter" asp-route-category="@Model.CategoryFilter">@i</a>
+                                </li>
+                            }
+                            <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                                <a class="page-link" asp-action="Transactions" asp-route-page="@(Model.Page + 1)" asp-route-type="@Model.TypeFilter" asp-route-category="@Model.CategoryFilter">Next</a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+            }
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                <h5>No Transactions Found</h5>
+                <p class="text-muted mb-0">Try adjusting your filters or check back later.</p>
+            </div>
+        }
+    </div>
+</div>

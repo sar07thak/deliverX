@@ -1,393 +1,161 @@
-# DeliverX - Setup & Installation Guide
+# DeliveryDost MVC - Setup & Testing Guide
 
-## How to Run DeliverX from GitHub Download
+## Quick Start
 
-This guide explains how to set up and run DeliverX after downloading the zip file from GitHub.
-
----
-
-## Prerequisites
-
-Before starting, install these on your computer:
-
-### 1. .NET SDK 10.0 (or latest)
-- Download: https://dotnet.microsoft.com/download
-- Verify installation:
-  ```bash
-  dotnet --version
-  ```
-  Expected: `10.0.x` or similar
-
-### 2. Node.js (v18 or later)
-- Download: https://nodejs.org/
-- Verify installation:
-  ```bash
-  node --version
-  npm --version
-  ```
-  Expected: `v18.x.x` or higher
-
-### 3. Git (Optional - for cloning)
-- Download: https://git-scm.com/downloads
-
----
-
-## Step 1: Download & Extract
-
-### Option A: Download ZIP
-1. Go to GitHub repository
-2. Click **Code** → **Download ZIP**
-3. Extract to a folder (e.g., `C:\Projects\DeliverX` or `~/Projects/DeliverX`)
-
-### Option B: Clone with Git
+### Start the Web Application
 ```bash
-git clone https://github.com/your-repo/deliverx.git
-cd deliverx
-```
-
----
-
-## Step 2: Project Structure
-
-After extraction, you'll have:
-```
-DeliverX/
-├── src/
-│   ├── DeliverX.API/          # Backend API (.NET)
-│   ├── DeliverX.Application/  # Business logic
-│   ├── DeliverX.Domain/       # Entities
-│   └── DeliverX.Infrastructure/ # Database & Services
-├── deliverx-ui/               # Frontend (React)
-├── testing/                   # Test documentation
-├── DeliverX.sln              # Solution file
-└── README.md
-```
-
----
-
-## Step 3: Setup Backend API
-
-### 3.1 Open Terminal/Command Prompt
-Navigate to the project folder:
-```bash
-cd C:\Projects\DeliverX
-# or on Mac/Linux
-cd ~/Projects/DeliverX
-```
-
-### 3.2 Restore NuGet Packages
-```bash
-dotnet restore
-```
-
-### 3.3 Build the Solution
-```bash
-dotnet build
-```
-Expected output: `Build succeeded. 0 Error(s)`
-
-### 3.4 Navigate to API Project
-```bash
-cd src/DeliverX.API
-```
-
-### 3.5 Run Database Migrations (First Time Only)
-```bash
-dotnet ef database update
-```
-This creates the SQLite database (`deliverx.db`)
-
-**Note:** If `dotnet ef` is not found, install it:
-```bash
-dotnet tool install --global dotnet-ef
-```
-
-### 3.6 Start the API
-```bash
+cd src/DeliveryDost.Web
 dotnet run
 ```
 
-Expected output:
-```
-info: Microsoft.Hosting.Lifetime[14]
-      Now listening on: http://localhost:5205
-info: Microsoft.Hosting.Lifetime[0]
-      Application started. Press Ctrl+C to shut down.
-```
-
-### 3.7 Verify API is Running
-Open browser: http://localhost:5205/swagger
-
-You should see the Swagger API documentation page.
-
-**Keep this terminal open!** The API must be running for the UI to work.
+**Application URL:** http://localhost:5300
 
 ---
 
-## Step 4: Setup Frontend UI
+## Test Accounts (Recommended Phone Numbers)
 
-### 4.1 Open NEW Terminal/Command Prompt
-Keep the API terminal running, open a new one.
-
-### 4.2 Navigate to UI Folder
-```bash
-cd C:\Projects\DeliverX\deliverx-ui
-# or on Mac/Linux
-cd ~/Projects/DeliverX/deliverx-ui
-```
-
-### 4.3 Install Dependencies
-```bash
-npm install
-```
-This downloads all required packages (may take 2-5 minutes).
-
-### 4.4 Start the UI
-```bash
-npm start
-```
-
-Expected output:
-```
-Compiled successfully!
-
-You can now view deliverx-ui in the browser.
-
-  Local:            http://localhost:3000
-  On Your Network:  http://192.168.x.x:3000
-```
-
-### 4.5 Access the Application
-Browser will automatically open, or go to: http://localhost:3000
+| Role | Phone Number | Description |
+|------|--------------|-------------|
+| **SuperAdmin** | 9999999999 | Platform administrator |
+| **DPCM** | 8888800001 | Delivery Partner Cluster Manager |
+| **DP** | 7878798797 | Delivery Partner |
+| **BC** | 7772223333 | Business Consumer |
+| **EC** | 6666666666 | End Consumer |
 
 ---
 
-## Step 5: First-Time Usage
+## Testing Order (Follow This Sequence)
 
-### 5.1 Register Your First User
+### Step 1: Admin Test (01_Admin_Test.md)
+- Login as SuperAdmin (9999999999)
+- View admin dashboard
+- Access User Management, KYC Requests, Complaints
 
-1. Open http://localhost:3000
-2. Select a role:
-   - **End Consumer** - For personal deliveries
-   - **Business** - For business deliveries
-   - **Delivery Partner** - To deliver packages
-   - **Admin/Manager** (scroll down) - For DPCM or SuperAdmin
+### Step 2: DPCM Test (02_DPCM_Test.md)
+- Login as DPCM (8888800001)
+- Complete registration (3 steps)
+- Set service area
+- Get referral code for DPs
 
-3. Enter phone number (e.g., `9999999999`)
+### Step 3: DP Test (03_DP_Test.md)
+- Login as DP (7878798797)
+- Complete 5-step registration
+- Use DPCM referral code
+- Configure pricing & service area
+
+### Step 4: BC Test (04_BC_Test.md)
+- Login as BC (7772223333)
+- View dashboard
+- Create delivery requests
+
+### Step 5: EC Test (05_EC_Test.md)
+- Login as EC (6666666666)
+- Create delivery request
+- Track deliveries
+
+### Step 6: Delivery Flow (06_Delivery_Flow.md)
+- Complete end-to-end delivery test
+- DP accepts, picks up, delivers
+- Consumer tracks and rates
+
+---
+
+## How to Login
+
+1. Open http://localhost:5300/Account/Login
+2. Select your role (Consumer, Business, Delivery, Manager, Admin)
+3. Enter phone number (10 digits)
 4. Click **Send OTP**
-5. Enter the OTP shown in the success message
-6. Click **Verify & Login**
-
-### 5.2 Test Phone Numbers (Suggested)
-
-| Role | Phone Number | Purpose |
-|------|--------------|---------|
-| SuperAdmin | 9000000001 | Platform admin |
-| DPCM | 8888800001 | Channel manager |
-| DP | 7777700001 | Delivery partner |
-| BC | 6666600001 | Business consumer |
-| EC | 5555500001 | End consumer |
+5. Enter the OTP shown on screen (Dev Mode shows OTP)
+6. Click **Verify & Continue**
 
 ---
 
-## Quick Start Commands Summary
+## Features by Role
 
-### Terminal 1 - Backend API
-```bash
-cd C:\Projects\DeliverX\src\DeliverX.API
-dotnet run
-```
+### SuperAdmin
+- Admin Dashboard with platform stats
+- User Management (view, activate/deactivate users)
+- KYC Requests (approve/reject)
+- Complaints Management
 
-### Terminal 2 - Frontend UI
-```bash
-cd C:\Projects\DeliverX\deliverx-ui
-npm start
-```
+### DPCM (Manager)
+- DPCM Dashboard with managed DP stats
+- My DPs (view registered delivery partners)
+- Service Area configuration
+- Wallet & settlements
 
----
+### DP (Delivery Partner)
+- DP Dashboard with earnings
+- Available Deliveries (accept new orders)
+- Active Delivery (current delivery)
+- Delivery History
+- Service Area configuration
+- Wallet
 
-## Configuration Files
-
-### API Configuration
-File: `src/DeliverX.API/appsettings.json`
-
-```json
-{
-  "JwtSettings": {
-    "SecretKey": "your-secret-key-min-32-chars",
-    "AccessTokenExpirationMinutes": 10080,
-    "RefreshTokenExpirationDays": 30
-  },
-  "OtpSettings": {
-    "Length": 6,
-    "ExpirationMinutes": 5,
-    "MaxAttempts": 3,
-    "RateLimitPerHour": 7
-  }
-}
-```
-
-### UI Configuration
-File: `deliverx-ui/.env` (create if not exists)
-
-```env
-REACT_APP_API_URL=http://localhost:5205/api/v1
-```
+### BC/EC (Consumers)
+- Dashboard with delivery stats
+- New Delivery (create requests)
+- My Deliveries (track orders)
+- Wallet (top-up, transactions)
+- My Complaints
 
 ---
 
-## Common Issues & Solutions
+## Database Reset (Fresh Start)
 
-### Issue 1: "dotnet: command not found"
-**Solution:** Install .NET SDK and restart terminal
 ```bash
-# Verify installation
-dotnet --version
-```
-
-### Issue 2: "npm: command not found"
-**Solution:** Install Node.js and restart terminal
-```bash
-# Verify installation
-node --version
-npm --version
-```
-
-### Issue 3: API Build Fails
-**Solution:** Restore packages
-```bash
-dotnet restore
-dotnet build
-```
-
-### Issue 4: "Port 5205 already in use"
-**Solution:** Kill existing process
-```bash
-# Windows
-netstat -ano | findstr :5205
-taskkill /PID <PID> /F
-
-# Mac/Linux
-lsof -i :5205
-kill -9 <PID>
-```
-
-### Issue 5: "Port 3000 already in use"
-**Solution:** Either kill the process or use different port
-```bash
-# Use different port
-PORT=3001 npm start
-```
-
-### Issue 6: UI shows "Network Error"
-**Solution:**
-1. Make sure API is running (Terminal 1)
-2. Check API URL: http://localhost:5205/swagger
-3. Check browser console for CORS errors
-
-### Issue 7: Database not found
-**Solution:** Run migrations
-```bash
-cd src/DeliverX.API
-dotnet ef database update
-```
-
-### Issue 8: "Entity Framework tools not found"
-**Solution:** Install EF tools
-```bash
-dotnet tool install --global dotnet-ef
-```
-
----
-
-## Stopping the Application
-
-### Stop API (Terminal 1)
-Press `Ctrl + C`
-
-### Stop UI (Terminal 2)
-Press `Ctrl + C`
-
----
-
-## Running in Production Mode
-
-### Build UI for Production
-```bash
-cd deliverx-ui
-npm run build
-```
-This creates optimized files in `build/` folder.
-
-### Build API for Production
-```bash
-cd src/DeliverX.API
-dotnet publish -c Release -o ./publish
-```
-Run with:
-```bash
-cd publish
-dotnet DeliverX.API.dll
-```
-
----
-
-## Database Location
-
-The SQLite database is located at:
-```
-src/DeliverX.API/deliverx.db
-```
-
-To reset database (delete all data):
-```bash
-# Delete the database file
+# Delete databases
 rm src/DeliverX.API/deliverx.db
+rm src/DeliveryDost.Web/deliverydost.db
 
-# Recreate with migrations
-cd src/DeliverX.API
-dotnet ef database update
+# Run migrations
+dotnet ef database update --project src/DeliverX.Infrastructure --startup-project src/DeliverX.API
+
+# Copy to web project
+cp src/DeliverX.API/deliverx.db src/DeliveryDost.Web/deliverydost.db
 ```
 
 ---
 
-## Development Tools (Optional)
+## Troubleshooting
 
-### Recommended IDE
-- **Backend:** Visual Studio 2022 or VS Code with C# extension
-- **Frontend:** VS Code with ES7+ React extension
+### Port 5300 already in use
+```bash
+netstat -ano | findstr :5300
+taskkill /PID <pid> /F
+```
 
-### Database Viewer
-- **SQLite Browser:** https://sqlitebrowser.org/
-- Open `deliverx.db` to view tables and data
+### Database locked error
+Stop the running application before deleting database files.
 
-### API Testing
-- **Postman:** https://www.postman.com/
-- **Swagger:** http://localhost:5205/swagger (built-in)
+### OTP not working
+- OTP is displayed on the verification screen in dev mode
+- Enter the exact 6-digit code shown
+- OTP expires in 5 minutes
+
+### Page not found after login
+- This is fixed - BC/EC users now go directly to Dashboard
+- Only DP and DPCM have registration flows
 
 ---
 
-## Folder Permissions (Mac/Linux)
+## Project Structure
 
-If you get permission errors:
-```bash
-chmod -R 755 DeliverX/
+```
+src/
+├── DeliverX.API/           # Backend API (port 5205)
+├── DeliverX.Application/   # Business logic
+├── DeliverX.Domain/        # Entities
+├── DeliverX.Infrastructure/# Database
+└── DeliveryDost.Web/       # MVC Web UI (port 5300)
 ```
 
 ---
 
 ## Next Steps
 
-After setup is complete:
-1. Read `testing/01_Admin_Test.md` to test Admin features
-2. Read `testing/06_Delivery_Flow.md` to understand delivery lifecycle
-3. Create users for each role and test the flow
-
----
-
-## Support
-
-For issues:
-1. Check this guide's troubleshooting section
-2. Check GitHub Issues
-3. Review API logs in terminal for errors
+1. Follow test guides in order (01 through 06)
+2. Each guide has step-by-step instructions
+3. Screenshots/expected results are described
+4. Complete all steps before moving to next guide

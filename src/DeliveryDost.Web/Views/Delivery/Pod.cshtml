@@ -1,0 +1,312 @@
+@model DeliveryDost.Web.ViewModels.Delivery.PodCaptureViewModel
+@{
+    ViewData["Title"] = "Capture POD";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-camera me-2"></i>Proof of Delivery
+            </h1>
+            <p class="page-subtitle">
+                Capture delivery confirmation to complete
+            </p>
+        </div>
+        <a asp-action="CurrentDelivery" asp-route-id="@Model.DeliveryId" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Back
+        </a>
+    </div>
+</div>
+
+<!-- Delivery Info -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h6 class="mb-1">
+                    <i class="bi bi-geo-alt text-danger me-2"></i>Drop Location
+                </h6>
+                <p class="mb-0">@Model.DropAddress</p>
+            </div>
+            <div class="col-md-4 text-md-end">
+                @if (!string.IsNullOrEmpty(Model.RecipientPhone))
+                {
+                    <a href="tel:@Model.RecipientPhone" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-telephone me-1"></i>@Model.RecipientPhone
+                    </a>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<form asp-action="SubmitPod" method="post" id="podForm">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="DeliveryId" />
+    <input type="hidden" asp-for="DropAddress" />
+    <input type="hidden" asp-for="RecipientName" />
+    <input type="hidden" asp-for="RecipientPhone" />
+
+    <div class="row">
+        <div class="col-lg-8 mb-4">
+            <!-- POD Type Selection -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-shield-check me-2"></i>Verification Method
+                </div>
+                <div class="card-body">
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="PodType" id="podOtp" value="OTP" checked>
+                        <label class="btn btn-outline-primary" for="podOtp">
+                            <i class="bi bi-key me-1"></i>OTP
+                        </label>
+
+                        <input type="radio" class="btn-check" name="PodType" id="podPhoto" value="PHOTO">
+                        <label class="btn btn-outline-primary" for="podPhoto">
+                            <i class="bi bi-camera me-1"></i>Photo
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- OTP Section -->
+            <div class="card mb-4" id="otpSection">
+                <div class="card-header">
+                    <i class="bi bi-key me-2"></i>OTP Verification
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Send OTP to recipient and enter it below to confirm delivery.
+                    </p>
+
+                    <div class="row align-items-end">
+                        <div class="col-md-4 mb-3">
+                            <button type="button" class="btn btn-outline-primary w-100" id="sendOtpBtn">
+                                <i class="bi bi-send me-1"></i>Send OTP
+                            </button>
+                        </div>
+                        <div class="col-md-8 mb-3">
+                            <label asp-for="Otp" class="form-label">Enter OTP</label>
+                            <input asp-for="Otp" class="form-control form-control-lg text-center"
+                                   maxlength="6" placeholder="_ _ _ _" id="otpInput" />
+                            <span asp-validation-for="Otp" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="alert alert-info d-none" id="otpSentAlert">
+                        <i class="bi bi-check-circle me-1"></i>
+                        <span id="otpSentMessage">OTP sent to recipient</span>
+                        <small class="d-block mt-1 text-muted" id="devOtpHint"></small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Photo Section -->
+            <div class="card mb-4 d-none" id="photoSection">
+                <div class="card-header">
+                    <i class="bi bi-camera me-2"></i>Photo Proof
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-3">
+                        Take a clear photo of the delivered package at the drop location.
+                    </p>
+
+                    <div class="text-center mb-3">
+                        <div id="photoPreview" class="mb-3 d-none">
+                            <img id="previewImage" src="" alt="Preview" class="img-fluid rounded" style="max-height: 300px;" />
+                        </div>
+
+                        <input type="file" id="photoInput" accept="image/*" capture="environment" class="d-none" />
+                        <input type="hidden" asp-for="PhotoBase64" id="photoBase64" />
+
+                        <button type="button" class="btn btn-primary btn-lg" id="capturePhotoBtn">
+                            <i class="bi bi-camera me-2"></i>Capture Photo
+                        </button>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="PhotoNotes" class="form-label">Photo Notes (Optional)</label>
+                        <input asp-for="PhotoNotes" class="form-control" placeholder="e.g., Left at door, handed to security" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delivery Notes -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-chat-text me-2"></i>Delivery Notes
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" asp-for="RecipientPresent" id="recipientPresent">
+                            <label class="form-check-label" for="recipientPresent">
+                                Recipient was present to receive
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" asp-for="LeftAtDoor" id="leftAtDoor">
+                            <label class="form-check-label" for="leftAtDoor">
+                                Left at door / designated location
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="DeliveryNotes" class="form-label">Additional Notes (Optional)</label>
+                        <textarea asp-for="DeliveryNotes" class="form-control" rows="2"
+                                  placeholder="Any additional notes about the delivery"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <!-- Summary Card -->
+            <div class="card mb-4 border-success">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-check-circle me-2"></i>Complete Delivery
+                </div>
+                <div class="card-body">
+                    <p class="mb-3 text-muted">
+                        Once you submit the POD, the delivery will be marked as complete.
+                    </p>
+
+                    <div class="alert alert-warning mb-3">
+                        <i class="bi bi-exclamation-triangle me-1"></i>
+                        <strong>Important:</strong> Ensure the package is safely delivered before confirming.
+                    </div>
+
+                    <button type="submit" class="btn btn-success btn-lg w-100" id="submitPodBtn">
+                        <i class="bi bi-check2-all me-2"></i>Complete Delivery
+                    </button>
+                </div>
+            </div>
+
+            <!-- Help Card -->
+            <div class="card">
+                <div class="card-header">
+                    <i class="bi bi-question-circle me-2"></i>Tips
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0 small">
+                        <li class="mb-2">
+                            <i class="bi bi-check text-success me-1"></i>
+                            Ask recipient for the OTP sent to their phone
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check text-success me-1"></i>
+                            If recipient is unavailable, use photo proof
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check text-success me-1"></i>
+                            Take clear photo showing package location
+                        </li>
+                        <li>
+                            <i class="bi bi-check text-success me-1"></i>
+                            Add notes for any special circumstances
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var deliveryId = '@Model.DeliveryId';
+            var otpSection = document.getElementById('otpSection');
+            var photoSection = document.getElementById('photoSection');
+            var sendOtpBtn = document.getElementById('sendOtpBtn');
+            var otpSentAlert = document.getElementById('otpSentAlert');
+            var capturePhotoBtn = document.getElementById('capturePhotoBtn');
+            var photoInput = document.getElementById('photoInput');
+            var photoPreview = document.getElementById('photoPreview');
+            var previewImage = document.getElementById('previewImage');
+            var photoBase64Input = document.getElementById('photoBase64');
+
+            // POD Type Toggle
+            document.querySelectorAll('input[name="PodType"]').forEach(function(radio) {
+                radio.addEventListener('change', function() {
+                    if (this.value === 'OTP') {
+                        otpSection.classList.remove('d-none');
+                        photoSection.classList.add('d-none');
+                    } else {
+                        otpSection.classList.add('d-none');
+                        photoSection.classList.remove('d-none');
+                    }
+                });
+            });
+
+            // Send OTP
+            sendOtpBtn.addEventListener('click', function() {
+                sendOtpBtn.disabled = true;
+                sendOtpBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Sending...';
+
+                fetch('@Url.Action("SendOtp")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(deliveryId)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    sendOtpBtn.disabled = false;
+                    sendOtpBtn.innerHTML = '<i class="bi bi-send me-1"></i>Resend OTP';
+
+                    if (data.success) {
+                        otpSentAlert.classList.remove('d-none');
+                        document.getElementById('otpSentMessage').textContent = data.message;
+                        // Show dev OTP for testing
+                        if (data.devOtp) {
+                            document.getElementById('devOtpHint').textContent = 'Dev OTP: ' + data.devOtp;
+                        }
+                    } else {
+                        alert(data.message || 'Failed to send OTP');
+                    }
+                })
+                .catch(err => {
+                    sendOtpBtn.disabled = false;
+                    sendOtpBtn.innerHTML = '<i class="bi bi-send me-1"></i>Send OTP';
+                    alert('Failed to send OTP');
+                });
+            });
+
+            // Photo Capture
+            capturePhotoBtn.addEventListener('click', function() {
+                photoInput.click();
+            });
+
+            photoInput.addEventListener('change', function(e) {
+                if (e.target.files && e.target.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function(ev) {
+                        previewImage.src = ev.target.result;
+                        photoBase64Input.value = ev.target.result;
+                        photoPreview.classList.remove('d-none');
+                        capturePhotoBtn.innerHTML = '<i class="bi bi-camera me-2"></i>Retake Photo';
+                    };
+                    reader.readAsDataURL(e.target.files[0]);
+                }
+            });
+
+            // Checkbox logic
+            document.getElementById('recipientPresent').addEventListener('change', function() {
+                if (this.checked) {
+                    document.getElementById('leftAtDoor').checked = false;
+                }
+            });
+
+            document.getElementById('leftAtDoor').addEventListener('change', function() {
+                if (this.checked) {
+                    document.getElementById('recipientPresent').checked = false;
+                }
+            });
+        });
+    </script>
+}

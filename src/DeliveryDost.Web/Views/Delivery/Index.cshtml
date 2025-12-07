@@ -1,0 +1,184 @@
+@model DeliveryDost.Web.ViewModels.Delivery.DeliveryListViewModel
+@{
+    ViewData["Title"] = Model.PageTitle;
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">@Model.PageTitle</h1>
+            <p class="page-subtitle">@Model.TotalCount delivery(ies) found</p>
+        </div>
+        @if (Model.ViewMode == "requester")
+        {
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> New Delivery
+            </a>
+        }
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Delivery.DeliveryListViewModel.StatusOptions, "Value", "Text", Model.StatusFilter))"></select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">From Date</label>
+                <input type="date" name="fromDate" class="form-control" value="@Model.FromDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">To Date</label>
+                <input type="date" name="toDate" class="form-control" value="@Model.ToDate?.ToString("yyyy-MM-dd")" />
+            </div>
+            <div class="col-md-3 d-flex align-items-end">
+                <button type="submit" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-funnel me-1"></i> Filter
+                </button>
+                <a asp-action="@ViewContext.RouteData.Values["action"]" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i> Clear
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Deliveries List -->
+@if (Model.Deliveries.Any())
+{
+    <div class="card">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Pickup</th>
+                            <th>Drop</th>
+                            <th>Distance</th>
+                            <th>Price</th>
+                            @if (Model.ViewMode == "requester")
+                            {
+                                <th>DP</th>
+                            }
+                            <th>Created</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var delivery in Model.Deliveries)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge @delivery.StatusBadgeClass">
+                                        <i class="bi @delivery.StatusIcon me-1"></i>
+                                        @delivery.Status
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;" title="@delivery.PickupAddress">
+                                        @delivery.PickupAddress
+                                    </div>
+                                </td>
+                                <td>
+                                    <div class="text-truncate" style="max-width: 200px;" title="@delivery.DropAddress">
+                                        @delivery.DropAddress
+                                    </div>
+                                </td>
+                                <td>
+                                    @if (delivery.DistanceKm.HasValue)
+                                    {
+                                        <span>@delivery.DistanceKm.Value.ToString("F1") km</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (delivery.EstimatedPrice.HasValue)
+                                    {
+                                        <span class="fw-semibold">₹@delivery.EstimatedPrice.Value.ToString("N0")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                @if (Model.ViewMode == "requester")
+                                {
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(delivery.AssignedDPName))
+                                        {
+                                            <span>@delivery.AssignedDPName</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Not assigned</span>
+                                        }
+                                    </td>
+                                }
+                                <td>
+                                    <small class="text-muted">@delivery.CreatedAt.ToString("dd MMM, HH:mm")</small>
+                                </td>
+                                <td>
+                                    <a asp-action="Details" asp-route-id="@delivery.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    @if (Model.TotalPages > 1)
+    {
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                <li class="page-item @(Model.Page <= 1 ? "disabled" : "")">
+                    <a class="page-link" asp-route-page="@(Model.Page - 1)" asp-route-status="@Model.StatusFilter">
+                        <i class="bi bi-chevron-left"></i>
+                    </a>
+                </li>
+                @for (int i = 1; i <= Model.TotalPages; i++)
+                {
+                    <li class="page-item @(Model.Page == i ? "active" : "")">
+                        <a class="page-link" asp-route-page="@i" asp-route-status="@Model.StatusFilter">@i</a>
+                    </li>
+                }
+                <li class="page-item @(Model.Page >= Model.TotalPages ? "disabled" : "")">
+                    <a class="page-link" asp-route-page="@(Model.Page + 1)" asp-route-status="@Model.StatusFilter">
+                        <i class="bi bi-chevron-right"></i>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    }
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-box-seam display-1 text-muted mb-3"></i>
+            <h4>No deliveries found</h4>
+            @if (Model.ViewMode == "requester")
+            {
+                <p class="text-muted mb-4">Create your first delivery to get started.</p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i> Create Delivery
+                </a>
+            }
+            else
+            {
+                <p class="text-muted mb-0">No deliveries match your criteria.</p>
+            }
+        </div>
+    </div>
+}

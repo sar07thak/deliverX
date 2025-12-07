@@ -1,4 +1,4 @@
-
+﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
@@ -12,6 +12,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeliverX.Infrastructure", "src\DeliverX.Infrastructure\DeliverX.Infrastructure.csproj", "{0B9242E8-2071-42CB-854D-14447F5D28D9}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeliverX.API", "src\DeliverX.API\DeliverX.API.csproj", "{DAFD9658-9834-497E-95EB-B0476A0CFF41}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DeliveryDost.Web", "src\DeliveryDost.Web\DeliveryDost.Web.csproj", "{3B1141EB-0C1E-437A-9354-AB03D58398DA}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -71,6 +73,18 @@ Global
 		{DAFD9658-9834-497E-95EB-B0476A0CFF41}.Release|x64.Build.0 = Release|Any CPU
 		{DAFD9658-9834-497E-95EB-B0476A0CFF41}.Release|x86.ActiveCfg = Release|Any CPU
 		{DAFD9658-9834-497E-95EB-B0476A0CFF41}.Release|x86.Build.0 = Release|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Debug|x64.Build.0 = Debug|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Debug|x86.Build.0 = Debug|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Release|x64.ActiveCfg = Release|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Release|x64.Build.0 = Release|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Release|x86.ActiveCfg = Release|Any CPU
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -80,5 +94,6 @@ Global
 		{88B5980B-1691-4C3C-9006-19D9B51F5D0C} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{0B9242E8-2071-42CB-854D-14447F5D28D9} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 		{DAFD9658-9834-497E-95EB-B0476A0CFF41} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
+		{3B1141EB-0C1E-437A-9354-AB03D58398DA} = {827E0CD3-B72D-47B6-A68D-7590B98EB39B}
 	EndGlobalSection
 EndGlobal

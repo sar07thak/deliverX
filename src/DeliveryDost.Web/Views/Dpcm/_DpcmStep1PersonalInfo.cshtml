@@ -1,0 +1,121 @@
+@model DeliveryDost.Web.ViewModels.Dpcm.DpcmRegistrationViewModel
+
+<h4 class="mb-4"><i class="bi bi-person me-2"></i>Personal Information</h4>
+
+<form asp-action="SavePersonalInfo" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="PersonalInfo.FullName" class="form-label"></label>
+                <input asp-for="PersonalInfo.FullName" class="form-control" placeholder="Enter your full name" />
+                <span asp-validation-for="PersonalInfo.FullName" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="PersonalInfo.Email" class="form-label"></label>
+                <input asp-for="PersonalInfo.Email" class="form-control" type="email" placeholder="your@email.com" />
+                <span asp-validation-for="PersonalInfo.Email" class="text-danger"></span>
+                <small class="text-muted">Required for commission reports and notifications</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="PersonalInfo.DOB" class="form-label"></label>
+                <input asp-for="PersonalInfo.DOB" class="form-control" type="date" max="@DateTime.Today.AddYears(-18).ToString("yyyy-MM-dd")" />
+                <span asp-validation-for="PersonalInfo.DOB" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="PersonalInfo.Gender" class="form-label"></label>
+                <select asp-for="PersonalInfo.Gender" class="form-select">
+                    <option value="">Select Gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+                <span asp-validation-for="PersonalInfo.Gender" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-geo-alt me-2"></i>Address</h5>
+
+        <div class="mb-3">
+            <label asp-for="PersonalInfo.AddressLine1" class="form-label"></label>
+            <input asp-for="PersonalInfo.AddressLine1" class="form-control" placeholder="House/Flat No., Building, Street" />
+            <span asp-validation-for="PersonalInfo.AddressLine1" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="PersonalInfo.AddressLine2" class="form-label"></label>
+            <input asp-for="PersonalInfo.AddressLine2" class="form-control" placeholder="Landmark, Area (Optional)" />
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="PersonalInfo.City" class="form-label"></label>
+                    <input asp-for="PersonalInfo.City" class="form-control" placeholder="City" />
+                    <span asp-validation-for="PersonalInfo.City" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="PersonalInfo.State" class="form-label"></label>
+                    <select asp-for="PersonalInfo.State" class="form-select">
+                        <option value="">Select State</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="Gujarat">Gujarat</option>
+                    </select>
+                    <span asp-validation-for="PersonalInfo.State" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="PersonalInfo.Pincode" class="form-label"></label>
+                    <input asp-for="PersonalInfo.Pincode" class="form-control" placeholder="6-digit pincode" maxlength="6" />
+                    <span asp-validation-for="PersonalInfo.Pincode" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-briefcase me-2"></i>Operating Details</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="PersonalInfo.OperatingArea" class="form-label"></label>
+                    <input asp-for="PersonalInfo.OperatingArea" class="form-control" placeholder="e.g., South Mumbai, Bangalore Central" />
+                    <small class="text-muted">Primary area where you'll onboard DPs</small>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="PersonalInfo.TargetDPCount" class="form-label"></label>
+                    <input asp-for="PersonalInfo.TargetDPCount" class="form-control" type="number" min="1" max="1000" />
+                    <small class="text-muted">How many DPs do you plan to onboard?</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-group-nav">
+        <div></div>
+        <button type="submit" class="btn btn-primary">
+            Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+    </div>
+</form>

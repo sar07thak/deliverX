@@ -1,0 +1,234 @@
+@model DeliveryDost.Web.ViewModels.Dp.DpRegistrationViewModel
+@using DeliveryDost.Web.ViewModels.Dp
+
+<h4 class="mb-4"><i class="bi bi-geo-alt me-2"></i>Service Area & Pricing</h4>
+<p class="text-muted mb-4">Set your delivery area and rates</p>
+
+<form asp-action="CompleteRegistration" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <!-- Service Area Map -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-map me-2"></i>Your Service Area</h5>
+
+        <div class="row mb-3">
+            <div class="col-md-8">
+                <div class="mb-3">
+                    <label class="form-label">Search Location</label>
+                    <input type="text" class="form-control" id="locationSearch" placeholder="Search for your area..." />
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="ServiceArea.RadiusKm" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="ServiceArea.RadiusKm" class="form-control" type="number" min="1" max="50" step="0.5" id="radiusInput" />
+                        <span class="input-group-text">km</span>
+                    </div>
+                    <span asp-validation-for="ServiceArea.RadiusKm" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+
+        <div id="map" style="height: 300px; border-radius: 8px; border: 1px solid #e9ecef; background: #f8f9fa;">
+            <div class="d-flex align-items-center justify-content-center h-100 text-muted">
+                <div class="text-center">
+                    <i class="bi bi-geo-alt" style="font-size: 2rem;"></i>
+                    <p class="mb-0">Map will load here</p>
+                    <small>Click "Use Current Location" or search above</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-3">
+            <button type="button" class="btn btn-outline-primary" id="useCurrentLocation">
+                <i class="bi bi-crosshair me-1"></i> Use Current Location
+            </button>
+        </div>
+
+        <input type="hidden" asp-for="ServiceArea.CenterLat" id="centerLat" />
+        <input type="hidden" asp-for="ServiceArea.CenterLng" id="centerLng" />
+        <input type="hidden" asp-for="ServiceArea.AddressText" id="addressText" />
+    </div>
+
+    <!-- Pricing -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-currency-rupee me-2"></i>Your Rates</h5>
+
+        <div class="row">
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label asp-for="ServiceArea.PerKmRate" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input asp-for="ServiceArea.PerKmRate" class="form-control" type="number" min="1" max="100" step="0.5" />
+                    </div>
+                    <span asp-validation-for="ServiceArea.PerKmRate" class="text-danger"></span>
+                    <small class="text-muted">Platform avg: ₹10/km</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label asp-for="ServiceArea.PerKgRate" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input asp-for="ServiceArea.PerKgRate" class="form-control" type="number" min="1" max="50" step="0.5" />
+                    </div>
+                    <span asp-validation-for="ServiceArea.PerKgRate" class="text-danger"></span>
+                    <small class="text-muted">Platform avg: ₹5/kg</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label asp-for="ServiceArea.MinCharge" class="form-label"></label>
+                    <div class="input-group">
+                        <span class="input-group-text">₹</span>
+                        <input asp-for="ServiceArea.MinCharge" class="form-control" type="number" min="10" max="500" step="5" />
+                    </div>
+                    <span asp-validation-for="ServiceArea.MinCharge" class="text-danger"></span>
+                    <small class="text-muted">Minimum per delivery</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="mb-3">
+                    <label asp-for="ServiceArea.MaxDistanceKm" class="form-label"></label>
+                    <div class="input-group">
+                        <input asp-for="ServiceArea.MaxDistanceKm" class="form-control" type="number" min="1" max="100" />
+                        <span class="input-group-text">km</span>
+                    </div>
+                    <small class="text-muted">Leave empty for no limit</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Earnings Calculator -->
+        <div class="card bg-light mt-3">
+            <div class="card-body">
+                <h6><i class="bi bi-calculator me-2"></i>Estimated Earnings</h6>
+                <div class="row text-center">
+                    <div class="col-4">
+                        <div class="text-muted small">Per 5km, 2kg delivery</div>
+                        <strong class="fs-5 text-success" id="estimatedEarning">₹55</strong>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">10 deliveries/day</div>
+                        <strong class="fs-5 text-success" id="dailyEarning">₹550</strong>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-muted small">Monthly (25 days)</div>
+                        <strong class="fs-5 text-success" id="monthlyEarning">₹13,750</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Availability -->
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-clock me-2"></i>Availability</h5>
+
+        <div class="availability-options">
+            @foreach (var option in ServiceAreaStepViewModel.AvailabilityOptions)
+            {
+                <div class="availability-option">
+                    <input type="radio" asp-for="ServiceArea.Availability" value="@option.Value" id="avail_@option.Value" />
+                    <label for="avail_@option.Value">@option.Text</label>
+                </div>
+            }
+        </div>
+        <span asp-validation-for="ServiceArea.Availability" class="text-danger"></span>
+    </div>
+
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>
+        <strong>Almost done!</strong> After completing registration, your KYC will be verified (usually within 24-48 hours). You can then start accepting deliveries!
+    </div>
+
+    <div class="btn-group-nav">
+        <button type="submit" asp-action="GoToStep" asp-route-step="4" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button type="submit" class="btn btn-success btn-lg">
+            <i class="bi bi-check-circle me-1"></i> Complete Registration
+        </button>
+    </div>
+</form>
+
+<style>
+    .availability-options {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .availability-option {
+        flex: 1;
+        min-width: 150px;
+    }
+
+    .availability-option input[type="radio"] {
+        display: none;
+    }
+
+    .availability-option label {
+        display: block;
+        padding: 1rem;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        cursor: pointer;
+        text-align: center;
+        transition: all 0.2s;
+    }
+
+    .availability-option input:checked + label {
+        border-color: var(--primary-color, #0d6efd);
+        background: rgba(13, 110, 253, 0.05);
+        color: var(--primary-color, #0d6efd);
+        font-weight: 500;
+    }
+
+    .availability-option label:hover {
+        border-color: #adb5bd;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Earnings calculator
+        function calculateEarnings() {
+            const perKm = parseFloat(document.querySelector('[name="ServiceArea.PerKmRate"]').value) || 10;
+            const perKg = parseFloat(document.querySelector('[name="ServiceArea.PerKgRate"]').value) || 5;
+            const minCharge = parseFloat(document.querySelector('[name="ServiceArea.MinCharge"]').value) || 30;
+
+            const singleDelivery = Math.max(minCharge, (5 * perKm) + (2 * perKg));
+            const daily = singleDelivery * 10;
+            const monthly = daily * 25;
+
+            document.getElementById('estimatedEarning').textContent = '₹' + singleDelivery.toFixed(0);
+            document.getElementById('dailyEarning').textContent = '₹' + daily.toFixed(0);
+            document.getElementById('monthlyEarning').textContent = '₹' + monthly.toLocaleString('en-IN');
+        }
+
+        document.querySelectorAll('[name="ServiceArea.PerKmRate"], [name="ServiceArea.PerKgRate"], [name="ServiceArea.MinCharge"]').forEach(el => {
+            el.addEventListener('input', calculateEarnings);
+        });
+
+        calculateEarnings();
+
+        // Geolocation
+        document.getElementById('useCurrentLocation').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function(position) {
+                    document.getElementById('centerLat').value = position.coords.latitude.toFixed(6);
+                    document.getElementById('centerLng').value = position.coords.longitude.toFixed(6);
+                    alert('Location captured: ' + position.coords.latitude.toFixed(4) + ', ' + position.coords.longitude.toFixed(4));
+                }, function(error) {
+                    alert('Could not get your location. Please search manually.');
+                });
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        });
+    });
+</script>

@@ -1,0 +1,70 @@
+@model IEnumerable<DeliveryDost.Web.ViewModels.Delivery.TimelineItemViewModel>
+
+@if (Model.Any())
+{
+    <div class="timeline">
+        @foreach (var item in Model)
+        {
+            <div class="timeline-item @(item.IsCurrent ? "current" : "") @(item.IsCompleted ? "completed" : "")">
+                <div class="timeline-icon">
+                    <i class="bi @item.IconClass"></i>
+                </div>
+                <div class="timeline-content">
+                    <h6 class="mb-1">@item.Status.Replace("_", " ")</h6>
+                    <small class="text-muted">@item.Timestamp.ToString("dd MMM, hh:mm tt")</small>
+                    @if (!string.IsNullOrEmpty(item.Description))
+                    {
+                        <p class="mb-0 small mt-1">@item.Description</p>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <p class="text-muted mb-0">No timeline events yet.</p>
+}
+
+<style>
+    .timeline {
+        position: relative;
+        padding-left: 30px;
+    }
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: 10px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: #dee2e6;
+    }
+    .timeline-item {
+        position: relative;
+        padding-bottom: 20px;
+    }
+    .timeline-item.completed .timeline-icon {
+        background: #198754;
+        color: white;
+    }
+    .timeline-item.current .timeline-icon {
+        background: #0d6efd;
+        color: white;
+    }
+    .timeline-icon {
+        position: absolute;
+        left: -30px;
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        background: #dee2e6;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+    }
+    .timeline-content {
+        padding-left: 10px;
+    }
+</style>

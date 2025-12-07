@@ -1,0 +1,165 @@
+@model DeliveryDost.Web.ViewModels.Dp.DpRegistrationViewModel
+@{
+    ViewData["Title"] = "Complete Your Registration";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Delivery Partner Registration</h1>
+    <p class="page-subtitle">Complete all steps to start accepting deliveries</p>
+</div>
+
+<!-- Progress Steps -->
+<div class="registration-progress mb-4">
+    <div class="progress-steps">
+        @for (int i = 1; i <= Model.TotalSteps; i++)
+        {
+            var stepClass = i < Model.CurrentStep ? "completed" : (i == Model.CurrentStep ? "active" : "");
+            var stepNames = new[] { "Personal", "Vehicle", "Bank", "KYC", "Service Area" };
+            <div class="step @stepClass">
+                <div class="step-number">
+                    @if (i < Model.CurrentStep)
+                    {
+                        <i class="bi bi-check"></i>
+                    }
+                    else
+                    {
+                        @i
+                    }
+                </div>
+                <div class="step-label">@stepNames[i - 1]</div>
+            </div>
+            @if (i < Model.TotalSteps)
+            {
+                <div class="step-line @(i < Model.CurrentStep ? "completed" : "")"></div>
+            }
+        }
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        @switch (Model.CurrentStep)
+        {
+            case 1:
+                @await Html.PartialAsync("_Step1PersonalInfo", Model)
+                break;
+            case 2:
+                @await Html.PartialAsync("_Step2VehicleInfo", Model)
+                break;
+            case 3:
+                @await Html.PartialAsync("_Step3BankDetails", Model)
+                break;
+            case 4:
+                @await Html.PartialAsync("_Step4KycDocuments", Model)
+                break;
+            case 5:
+                @await Html.PartialAsync("_Step5ServiceArea", Model)
+                break;
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <style>
+        .registration-progress {
+            padding: 20px 0;
+        }
+
+        .progress-steps {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            color: #6c757d;
+            transition: all 0.3s;
+        }
+
+        .step.active .step-number {
+            background: var(--primary-color, #0d6efd);
+            color: white;
+        }
+
+        .step.completed .step-number {
+            background: #198754;
+            color: white;
+        }
+
+        .step-label {
+            margin-top: 8px;
+            font-size: 0.8rem;
+            color: #6c757d;
+            text-align: center;
+        }
+
+        .step.active .step-label,
+        .step.completed .step-label {
+            color: #212529;
+            font-weight: 500;
+        }
+
+        .step-line {
+            width: 60px;
+            height: 3px;
+            background: #e9ecef;
+            margin: 0 10px;
+            margin-bottom: 28px;
+        }
+
+        .step-line.completed {
+            background: #198754;
+        }
+
+        .form-section {
+            margin-bottom: 2rem;
+        }
+
+        .form-section-title {
+            font-weight: 600;
+            margin-bottom: 1rem;
+            padding-bottom: 0.5rem;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .btn-group-nav {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1rem;
+            border-top: 1px solid #e9ecef;
+        }
+
+        @@media (max-width: 768px) {
+            .step-label {
+                display: none;
+            }
+
+            .step-line {
+                width: 30px;
+                margin-bottom: 0;
+            }
+
+            .progress-steps {
+                padding: 0 10px;
+            }
+        }
+    </style>
+}

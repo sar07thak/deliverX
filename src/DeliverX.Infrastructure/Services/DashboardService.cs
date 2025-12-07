@@ -217,10 +217,16 @@ public class DashboardService : IDashboardService
     {
         var today = DateTime.UtcNow.Date;
 
-        // Get all DPs managed by this DPCM
+        // First, get the DPCManager record for this user
+        var dpcmManager = await _context.DPCManagers
+            .FirstOrDefaultAsync(m => m.UserId == dpcmId, ct);
+
+        var dpcmManagerId = dpcmManager?.Id ?? Guid.Empty;
+
+        // Get all DPs managed by this DPCM (using DPCManager.Id, not User.Id)
         var managedDPs = await _context.DeliveryPartnerProfiles
             .Include(dp => dp.User)
-            .Where(dp => dp.DPCMId == dpcmId)
+            .Where(dp => dp.DPCMId == dpcmManagerId)
             .ToListAsync(ct);
 
         var dpIds = managedDPs.Select(dp => dp.UserId).ToList();
@@ -298,9 +304,9 @@ public class DashboardService : IDashboardService
             });
         }
 
-        // Get DPCM earnings
+        // Get DPCM earnings (DPCMCommissionConfigs uses DPCManager.Id)
         var commissionConfig = await _context.DPCMCommissionConfigs
-            .Where(c => c.DPCMId == dpcmId && (c.EffectiveTo == null || c.EffectiveTo > DateTime.UtcNow))
+            .Where(c => c.DPCMId == dpcmManagerId && (c.EffectiveTo == null || c.EffectiveTo > DateTime.UtcNow))
             .FirstOrDefaultAsync(ct);
 
         var totalEarnings = await _context.CommissionRecords
@@ -745,9 +751,15 @@ public class DashboardService : IDashboardService
     // DPCM Partner Management
     public async Task<DPCMPartnersResponse> GetDPCMPartnersAsync(Guid dpcmId, DPCMPartnersRequest request, CancellationToken ct = default)
     {
+        // First, get the DPCManager record for this user
+        var dpcmManager = await _context.DPCManagers
+            .FirstOrDefaultAsync(m => m.UserId == dpcmId, ct);
+
+        var dpcmManagerId = dpcmManager?.Id ?? Guid.Empty;
+
         var query = _context.DeliveryPartnerProfiles
             .Include(dp => dp.User)
-            .Where(dp => dp.DPCMId == dpcmId);
+            .Where(dp => dp.DPCMId == dpcmManagerId);
 
         // Apply status filter
         if (!string.IsNullOrEmpty(request.Status) && request.Status != "all")
@@ -826,8 +838,14 @@ public class DashboardService : IDashboardService
 
     public async Task<bool> UpdateDPStatusByDPCMAsync(Guid dpcmId, Guid dpId, bool isActive, CancellationToken ct = default)
     {
+        // First, get the DPCManager record for this user
+        var dpcmManager = await _context.DPCManagers
+            .FirstOrDefaultAsync(m => m.UserId == dpcmId, ct);
+
+        var dpcmManagerId = dpcmManager?.Id ?? Guid.Empty;
+
         var dp = await _context.DeliveryPartnerProfiles
-            .FirstOrDefaultAsync(dp => dp.UserId == dpId && dp.DPCMId == dpcmId, ct);
+            .FirstOrDefaultAsync(dp => dp.UserId == dpId && dp.DPCMId == dpcmManagerId, ct);
 
         if (dp == null) return false;
 
@@ -852,9 +870,15 @@ public class DashboardService : IDashboardService
 
     public async Task<DPCMDeliveriesResponse> GetDPCMDeliveriesAsync(Guid dpcmId, DPCMDeliveriesRequest request, CancellationToken ct = default)
     {
+        // First, get the DPCManager record for this user
+        var dpcmManager = await _context.DPCManagers
+            .FirstOrDefaultAsync(m => m.UserId == dpcmId, ct);
+
+        var dpcmManagerId = dpcmManager?.Id ?? Guid.Empty;
+
         // Get all DPs managed by this DPCM
         var dpIds = await _context.DeliveryPartnerProfiles
-            .Where(dp => dp.DPCMId == dpcmId)
+            .Where(dp => dp.DPCMId == dpcmManagerId)
             .Select(dp => dp.UserId)
             .ToListAsync(ct);
 

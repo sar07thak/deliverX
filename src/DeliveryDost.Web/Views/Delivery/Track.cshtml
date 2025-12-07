@@ -1,0 +1,326 @@
+@model DeliveryDost.Web.ViewModels.Delivery.LiveTrackingViewModel
+@{
+    ViewData["Title"] = "Track Delivery";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-geo me-2"></i>Track Delivery
+            </h1>
+            <p class="page-subtitle">
+                Delivery #@Model.DeliveryId.ToString().Substring(0, 8).ToUpper()
+            </p>
+        </div>
+        <a asp-action="Details" asp-route-id="@Model.DeliveryId" class="btn btn-outline-secondary">
+            <i class="bi bi-info-circle me-1"></i>Details
+        </a>
+    </div>
+</div>
+
+<!-- Status Banner -->
+<div class="card mb-4 @(Model.IsCompleted ? "bg-success" : "bg-primary") text-white">
+    <div class="card-body py-3">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-1">
+                    <i class="bi @(Model.IsCompleted ? "bi-check2-all" : "bi-truck") me-2"></i>
+                    @Model.StatusMessage
+                </h5>
+                @if (Model.EstimatedMinutesRemaining.HasValue && Model.EstimatedMinutesRemaining > 0)
+                {
+                    <small>
+                        <i class="bi bi-clock me-1"></i>
+                        Estimated arrival in @Model.EstimatedMinutesRemaining minutes
+                    </small>
+                }
+            </div>
+            <div class="col-md-4 text-md-end">
+                <span class="badge bg-light text-dark fs-6 px-3 py-2">
+                    @Model.Status.Replace("_", " ")
+                </span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Map -->
+    <div class="col-lg-8 mb-4">
+        <!-- Live Map -->
+        <div class="card mb-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-map me-2"></i>Live Location
+                </span>
+                @if (Model.IsActive)
+                {
+                    <span class="badge bg-success">
+                        <i class="bi bi-broadcast me-1"></i>Live
+                    </span>
+                }
+            </div>
+            <div class="card-body p-0">
+                <div id="trackingMap" style="height: 400px;"></div>
+            </div>
+            <div class="card-footer">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <span class="badge bg-success me-2">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </span>
+                        <small>Pickup</small>
+                    </div>
+                    <div class="col-6">
+                        <span class="badge bg-danger me-2">
+                            <i class="bi bi-geo-alt-fill"></i>
+                        </span>
+                        <small>Drop</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Locations -->
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 border-success">
+                    <div class="card-header bg-success text-white py-2">
+                        <i class="bi bi-geo-alt-fill me-2"></i>Pickup
+                    </div>
+                    <div class="card-body py-2">
+                        <small class="text-muted">@Model.Pickup.Address</small>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-6 mb-3">
+                <div class="card h-100 border-danger">
+                    <div class="card-header bg-danger text-white py-2">
+                        <i class="bi bi-geo-alt-fill me-2"></i>Drop
+                    </div>
+                    <div class="card-body py-2">
+                        <small class="text-muted">@Model.Drop.Address</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Timeline & DP Info -->
+    <div class="col-lg-4 mb-4">
+        <!-- DP Info -->
+        @if (Model.AssignedDP != null)
+        {
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-person-badge me-2"></i>Delivery Partner
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center mb-3">
+                        <div class="rounded-circle bg-primary text-white d-flex align-items-center justify-content-center me-3"
+                             style="width: 50px; height: 50px;">
+                            @Model.AssignedDP.Name[0]
+                        </div>
+                        <div>
+                            <h6 class="mb-0">@Model.AssignedDP.Name</h6>
+                            <div class="text-warning small">
+                                @for (int i = 0; i < (int)Model.AssignedDP.Rating; i++)
+                                {
+                                    <i class="bi bi-star-fill"></i>
+                                }
+                                <span class="text-muted ms-1">@Model.AssignedDP.Rating.ToString("F1")</span>
+                            </div>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(Model.AssignedDP.Phone))
+                    {
+                        <a href="tel:@Model.AssignedDP.Phone" class="btn btn-outline-primary btn-sm w-100">
+                            <i class="bi bi-telephone me-1"></i>Call DP
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Timeline -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-clock-history me-2"></i>Delivery Timeline
+            </div>
+            <div class="card-body">
+                @if (Model.Timeline.Any())
+                {
+                    <div class="timeline-compact">
+                        @foreach (var item in Model.Timeline.OrderByDescending(t => t.Timestamp))
+                        {
+                            <div class="timeline-item-compact">
+                                <div class="timeline-icon-compact @(item.Status == Model.Status ? "bg-primary" : "bg-success")">
+                                    <i class="bi @item.IconClass"></i>
+                                </div>
+                                <div class="timeline-content-compact">
+                                    <strong>@item.Status.Replace("_", " ")</strong>
+                                    <br />
+                                    <small class="text-muted">@item.Timestamp.ToString("hh:mm tt")</small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <p class="text-muted mb-0">No updates yet</p>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #trackingMap { z-index: 1; }
+
+        .timeline-compact {
+            position: relative;
+            padding-left: 40px;
+        }
+
+        .timeline-item-compact {
+            position: relative;
+            padding-bottom: 15px;
+        }
+
+        .timeline-item-compact::before {
+            content: '';
+            position: absolute;
+            left: -32px;
+            top: 20px;
+            bottom: 0;
+            width: 2px;
+            background: #dee2e6;
+        }
+
+        .timeline-item-compact:last-child::before {
+            display: none;
+        }
+
+        .timeline-icon-compact {
+            position: absolute;
+            left: -40px;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 10px;
+        }
+
+        .dp-marker {
+            background: #0d6efd;
+            border: 3px solid white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.3);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var deliveryId = '@Model.DeliveryId';
+            var pickupLat = @Model.Pickup.Lat;
+            var pickupLng = @Model.Pickup.Lng;
+            var dropLat = @Model.Drop.Lat;
+            var dropLng = @Model.Drop.Lng;
+            var isActive = @Model.IsActive.ToString().ToLower();
+            var isCompleted = @Model.IsCompleted.ToString().ToLower();
+
+            var map = L.map('trackingMap');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Pickup marker
+            var pickupIcon = L.divIcon({
+                html: '<i class="bi bi-geo-alt-fill text-success" style="font-size: 28px;"></i>',
+                className: 'custom-marker',
+                iconSize: [28, 28],
+                iconAnchor: [14, 28]
+            });
+
+            // Drop marker
+            var dropIcon = L.divIcon({
+                html: '<i class="bi bi-geo-alt-fill text-danger" style="font-size: 28px;"></i>',
+                className: 'custom-marker',
+                iconSize: [28, 28],
+                iconAnchor: [14, 28]
+            });
+
+            // DP marker (blue dot)
+            var dpIcon = L.divIcon({
+                html: '<div class="dp-marker"></div>',
+                className: 'custom-marker',
+                iconSize: [20, 20],
+                iconAnchor: [10, 10]
+            });
+
+            L.marker([pickupLat, pickupLng], { icon: pickupIcon }).addTo(map)
+                .bindPopup('<strong>Pickup</strong><br>@Model.Pickup.Address.Replace("'", "\\'")');
+
+            L.marker([dropLat, dropLng], { icon: dropIcon }).addTo(map)
+                .bindPopup('<strong>Drop</strong><br>@Model.Drop.Address.Replace("'", "\\'")');
+
+            // Route line
+            var routeLine = L.polyline([[pickupLat, pickupLng], [dropLat, dropLng]], {
+                color: '#0d6efd',
+                weight: 3,
+                dashArray: '10, 10'
+            }).addTo(map);
+
+            // DP marker (will be updated)
+            var dpMarker = null;
+
+            // Fit bounds
+            var bounds = L.latLngBounds([[pickupLat, pickupLng], [dropLat, dropLng]]);
+            map.fitBounds(bounds, { padding: [30, 30] });
+
+            // Function to update DP location
+            function updateLocation() {
+                fetch('@Url.Action("GetLocation")?deliveryId=' + deliveryId)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success && data.lat && data.lng) {
+                            if (dpMarker) {
+                                dpMarker.setLatLng([data.lat, data.lng]);
+                            } else {
+                                dpMarker = L.marker([data.lat, data.lng], { icon: dpIcon }).addTo(map);
+                                dpMarker.bindPopup('<strong>Delivery Partner</strong>');
+                            }
+
+                            // Update ETA if element exists
+                            var etaElement = document.querySelector('[data-eta]');
+                            if (etaElement && data.estimatedMinutes) {
+                                etaElement.textContent = data.estimatedMinutes + ' min';
+                            }
+                        }
+                    })
+                    .catch(err => console.error('Location update error:', err));
+            }
+
+            // Initial location fetch
+            updateLocation();
+
+            // Auto-refresh if delivery is active
+            if (isActive && !isCompleted) {
+                setInterval(updateLocation, @(Model.RefreshIntervalSeconds * 1000));
+            }
+        });
+    </script>
+}

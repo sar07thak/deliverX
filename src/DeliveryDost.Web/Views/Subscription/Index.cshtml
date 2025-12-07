@@ -1,0 +1,252 @@
+@model DeliveryDost.Web.ViewModels.Business.SubscriptionListViewModel
+
+<div class="page-header text-center">
+    <h1 class="page-title">Subscription Plans</h1>
+    <p class="page-subtitle">Choose the plan that best fits your business needs</p>
+</div>
+
+@if (Model.HasActiveSubscription)
+{
+    <div class="alert alert-success mb-4">
+        <i class="bi bi-check-circle me-2"></i>
+        You are currently subscribed to <strong>@Model.CurrentSubscription!.PlanName</strong>.
+        <a asp-action="MySubscription" class="alert-link ms-2">Manage Subscription</a>
+    </div>
+}
+
+<div class="row g-4 justify-content-center mb-5">
+    @foreach (var plan in Model.Plans)
+    {
+        <div class="col-lg-4 col-md-6">
+            <div class="card pricing-card @(plan.IsPopular ? "popular" : "") @(plan.IsCurrentPlan ? "current" : "")">
+                @if (plan.IsPopular)
+                {
+                    <div class="popular-badge">Most Popular</div>
+                }
+                @if (plan.IsCurrentPlan)
+                {
+                    <div class="current-badge">Current Plan</div>
+                }
+                <div class="card-header text-center">
+                    <h4 class="mb-0">@plan.Name</h4>
+                    <p class="text-muted small mb-0">@plan.Description</p>
+                </div>
+                <div class="card-body text-center">
+                    <div class="pricing-amount mb-3">
+                        <sup class="currency">&#8377;</sup>
+                        <span class="amount">@plan.MonthlyPrice.ToString("N0")</span>
+                        <span class="period">/month</span>
+                    </div>
+                    <div class="annual-pricing mb-4">
+                        <small class="text-muted">
+                            or &#8377;@plan.AnnualPrice.ToString("N0")/year
+                            <span class="badge bg-success">Save @plan.DiscountPercent%</span>
+                        </small>
+                    </div>
+
+                    <ul class="feature-list">
+                        @foreach (var feature in plan.Features)
+                        {
+                            <li>
+                                <i class="bi bi-check text-success"></i>
+                                @feature
+                            </li>
+                        }
+                    </ul>
+                </div>
+                <div class="card-footer">
+                    @if (plan.IsCurrentPlan)
+                    {
+                        <a asp-action="MySubscription" class="btn btn-outline-primary w-100">
+                            Manage Plan
+                        </a>
+                    }
+                    else
+                    {
+                        <div class="d-grid gap-2">
+                            <a asp-action="Subscribe" asp-route-planId="@plan.PlanId" asp-route-cycle="MONTHLY"
+                               class="btn @(plan.IsPopular ? "btn-primary" : "btn-outline-primary")">
+                                Subscribe Monthly
+                            </a>
+                            <a asp-action="Subscribe" asp-route-planId="@plan.PlanId" asp-route-cycle="ANNUAL"
+                               class="btn btn-sm btn-link">
+                                Subscribe Annually & Save
+                            </a>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Features Comparison -->
+<div class="card">
+    <div class="card-header">
+        <span><i class="bi bi-table me-2"></i>Feature Comparison</span>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-bordered mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Feature</th>
+                        @foreach (var plan in Model.Plans)
+                        {
+                            <th class="text-center">@plan.Name</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Monthly Deliveries</td>
+                        @foreach (var plan in Model.Plans)
+                        {
+                            <td class="text-center">
+                                @(plan.MaxDeliveriesPerMonth < 0 ? "Unlimited" : plan.MaxDeliveriesPerMonth.ToString())
+                            </td>
+                        }
+                    </tr>
+                    <tr>
+                        <td>Delivery Fee Discount</td>
+                        @foreach (var plan in Model.Plans)
+                        {
+                            <td class="text-center">@plan.DiscountOnDeliveries%</td>
+                        }
+                    </tr>
+                    <tr>
+                        <td>Priority Support</td>
+                        @foreach (var plan in Model.Plans)
+                        {
+                            <td class="text-center">
+                                @if (plan.HasPrioritySupport)
+                                {
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-x-circle text-muted"></i>
+                                }
+                            </td>
+                        }
+                    </tr>
+                    <tr>
+                        <td>Dedicated Account Manager</td>
+                        @foreach (var plan in Model.Plans)
+                        {
+                            <td class="text-center">
+                                @if (plan.HasDedicatedManager)
+                                {
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-x-circle text-muted"></i>
+                                }
+                            </td>
+                        }
+                    </tr>
+                    <tr>
+                        <td>API Access</td>
+                        @foreach (var plan in Model.Plans)
+                        {
+                            <td class="text-center">
+                                @if (plan.HasApiAccess)
+                                {
+                                    <i class="bi bi-check-circle-fill text-success"></i>
+                                }
+                                else
+                                {
+                                    <i class="bi bi-x-circle text-muted"></i>
+                                }
+                            </td>
+                        }
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<style>
+    .pricing-card {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .pricing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    }
+
+    .pricing-card.popular {
+        border-color: var(--primary-color, #0d6efd);
+    }
+
+    .pricing-card.current {
+        border-color: #198754;
+    }
+
+    .popular-badge {
+        position: absolute;
+        top: 15px;
+        right: -30px;
+        background: var(--primary-color, #0d6efd);
+        color: white;
+        padding: 4px 40px;
+        font-size: 0.75rem;
+        transform: rotate(45deg);
+    }
+
+    .current-badge {
+        position: absolute;
+        top: 15px;
+        right: -25px;
+        background: #198754;
+        color: white;
+        padding: 4px 40px;
+        font-size: 0.75rem;
+        transform: rotate(45deg);
+    }
+
+    .pricing-amount {
+        font-size: 1rem;
+    }
+
+    .pricing-amount .currency {
+        font-size: 1.5rem;
+        top: -1rem;
+    }
+
+    .pricing-amount .amount {
+        font-size: 3rem;
+        font-weight: 700;
+    }
+
+    .pricing-amount .period {
+        color: #6c757d;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        text-align: left;
+    }
+
+    .feature-list li {
+        padding: 0.5rem 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+
+    .feature-list li:last-child {
+        border-bottom: none;
+    }
+
+    .feature-list li i {
+        margin-right: 0.5rem;
+    }
+</style>

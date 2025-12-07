@@ -1,0 +1,207 @@
+@model DeliveryDost.Web.ViewModels.Dpcm.DpcmDashboardViewModel
+@{
+    ViewData["Title"] = "DPCM Dashboard";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Welcome, @Model.FullName!</h1>
+    <p class="page-subtitle">Manage your delivery partners and track earnings</p>
+</div>
+
+<!-- Referral Code Card -->
+<div class="card mb-4 bg-primary text-white">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-2">Your Referral Code</h5>
+                <div class="d-flex align-items-center gap-3">
+                    <span class="fs-3 fw-bold" id="referralCode">@Model.ReferralCode</span>
+                    <button class="btn btn-light btn-sm" onclick="copyReferralCode()">
+                        <i class="bi bi-clipboard me-1"></i> Copy
+                    </button>
+                </div>
+                <small class="opacity-75">Share this code with delivery partners to onboard them under your network</small>
+            </div>
+            <div class="col-md-4 text-end">
+                <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#shareModal">
+                    <i class="bi bi-share me-1"></i> Share
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>@Model.TotalDPs</h3>
+                <p>Total DPs</p>
+            </div>
+            <div class="stat-icon primary">
+                <i class="bi bi-people"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>@Model.ActiveDPs</h3>
+                <p>Active DPs</p>
+            </div>
+            <div class="stat-icon success">
+                <i class="bi bi-person-check"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>@Model.PendingKYC</h3>
+                <p>Pending KYC</p>
+            </div>
+            <div class="stat-icon warning">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>&#8377;@Model.MonthlyCommission.ToString("N0")</h3>
+                <p>This Month</p>
+            </div>
+            <div class="stat-icon success">
+                <i class="bi bi-currency-rupee"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Recent DPs -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <span>Recent Delivery Partners</span>
+                <a asp-action="MyDPs" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                @if (Model.RecentDPs.Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Status</th>
+                                    <th>Joined</th>
+                                    <th>Deliveries</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var dp in Model.RecentDPs)
+                                {
+                                    <tr>
+                                        <td>@dp.Name</td>
+                                        <td>@dp.Phone</td>
+                                        <td>
+                                            <span class="badge @(dp.Status == "ACTIVE" ? "bg-success" : "bg-warning")">
+                                                @dp.Status
+                                            </span>
+                                        </td>
+                                        <td>@dp.JoinedAt.ToString("dd MMM")</td>
+                                        <td>@dp.DeliveriesCompleted</td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="empty-state">
+                        <i class="bi bi-people"></i>
+                        <h5>No delivery partners yet</h5>
+                        <p>Share your referral code to start onboarding</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions & Earnings -->
+    <div class="col-lg-4">
+        <div class="card mb-4">
+            <div class="card-header">
+                <span>Quick Actions</span>
+            </div>
+            <div class="card-body p-0">
+                <a href="#" class="list-item text-decoration-none" data-bs-toggle="modal" data-bs-target="#shareModal">
+                    <i class="bi bi-share text-primary me-3"></i>
+                    <span>Share Referral Code</span>
+                </a>
+                <a asp-action="MyDPs" class="list-item text-decoration-none">
+                    <i class="bi bi-people text-primary me-3"></i>
+                    <span>View My DPs</span>
+                </a>
+                <a asp-controller="Wallet" asp-action="Index" class="list-item text-decoration-none">
+                    <i class="bi bi-wallet2 text-primary me-3"></i>
+                    <span>Commission Wallet</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">
+                <span>Total Earnings</span>
+            </div>
+            <div class="card-body text-center">
+                <h2 class="mb-2" style="font-size: 2rem; font-weight: 700;">&#8377;@Model.TotalCommission.ToString("N0")</h2>
+                <p class="text-muted mb-3">Lifetime commission earned</p>
+                <a asp-controller="Wallet" asp-action="Index" class="btn btn-primary btn-sm">
+                    View Details
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal fade" id="shareModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Share Referral Code</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <p>Share this link with potential delivery partners:</p>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="shareLink" readonly value="@Url.Action("Register", "Dp", new { referral = Model.ReferralCode }, Context.Request.Scheme)" />
+                    <button class="btn btn-outline-primary" onclick="copyShareLink()">Copy</button>
+                </div>
+
+                <div class="d-grid gap-2">
+                    <a href="https://wa.me/?text=Join%20DeliveryDost%20as%20a%20delivery%20partner!%20Use%20my%20referral%20code%20@Model.ReferralCode" target="_blank" class="btn btn-success">
+                        <i class="bi bi-whatsapp me-2"></i>Share on WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    function copyReferralCode() {
+        navigator.clipboard.writeText(document.getElementById('referralCode').textContent);
+        alert('Referral code copied!');
+    }
+
+    function copyShareLink() {
+        navigator.clipboard.writeText(document.getElementById('shareLink').value);
+        alert('Link copied!');
+    }
+</script>

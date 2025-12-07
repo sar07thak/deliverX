@@ -1,0 +1,187 @@
+@model DeliveryDost.Web.ViewModels.ServiceArea.ServiceAreaIndexViewModel
+@{
+    ViewData["Title"] = "My Service Area";
+}
+
+<div class="page-header">
+    <h1 class="page-title">My Service Area</h1>
+    <p class="page-subtitle">Configure your delivery coverage zone</p>
+</div>
+
+@if (Model.HasActiveArea && Model.ActiveArea != null)
+{
+    <!-- Active Service Area Card -->
+    <div class="card mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <span>
+                <i class="bi bi-geo-alt-fill text-success me-2"></i>
+                Active Service Area
+            </span>
+            <span class="badge bg-success">Active</span>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-lg-8">
+                    <!-- Map Display -->
+                    <div id="serviceAreaMap" style="height: 400px; border-radius: 8px;"></div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="mt-3 mt-lg-0">
+                        <h5>@(Model.ActiveArea.AreaName ?? "My Delivery Zone")</h5>
+
+                        <div class="mb-3">
+                            <small class="text-muted">Coverage Radius</small>
+                            <h4 class="mb-0">@Model.ActiveArea.RadiusKm km</h4>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">Estimated Coverage</small>
+                            <p class="mb-0">@Model.ActiveArea.EstimatedCoverage</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">Center Location</small>
+                            <p class="mb-0">@Model.ActiveArea.CenterLat.ToString("F4"), @Model.ActiveArea.CenterLng.ToString("F4")</p>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">Drop Outside Area</small>
+                            <p class="mb-0">
+                                @if (Model.ActiveArea.AllowDropOutsideArea)
+                                {
+                                    <span class="badge bg-info">Allowed</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Not Allowed</span>
+                                }
+                            </p>
+                        </div>
+
+                        <div class="mb-3">
+                            <small class="text-muted">Last Updated</small>
+                            <p class="mb-0">@Model.ActiveArea.UpdatedAt.ToString("dd MMM yyyy, hh:mm tt")</p>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <a asp-action="Configure" class="btn btn-primary">
+                                <i class="bi bi-pencil me-1"></i> Edit Service Area
+                            </a>
+                            <form asp-action="Deactivate" method="post" onsubmit="return confirm('Are you sure you want to deactivate this service area? You will not receive new delivery requests.');">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="serviceAreaId" value="@Model.ActiveArea.Id" />
+                                <button type="submit" class="btn btn-outline-danger w-100">
+                                    <i class="bi bi-pause-circle me-1"></i> Deactivate
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- No Service Area Card -->
+    <div class="card mb-4">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-geo-alt display-1 text-muted mb-3"></i>
+            <h4>No Service Area Configured</h4>
+            <p class="text-muted mb-4">Set up your delivery zone to start receiving delivery requests in your area.</p>
+            <a asp-action="Configure" class="btn btn-primary btn-lg">
+                <i class="bi bi-plus-circle me-2"></i> Set Up Service Area
+            </a>
+        </div>
+    </div>
+}
+
+<!-- Tips Card -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-lightbulb me-2"></i> Tips for Setting Your Service Area
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2">1</span>
+                    </div>
+                    <div>
+                        <h6>Choose Your Center</h6>
+                        <p class="text-muted small mb-0">Pick a central location in your preferred delivery zone.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4 mb-3 mb-md-0">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2">2</span>
+                    </div>
+                    <div>
+                        <h6>Set Realistic Radius</h6>
+                        <p class="text-muted small mb-0">Start with 5-10 km and expand as you gain experience.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="d-flex">
+                    <div class="me-3">
+                        <span class="badge bg-primary rounded-circle p-2">3</span>
+                    </div>
+                    <div>
+                        <h6>Update Regularly</h6>
+                        <p class="text-muted small mb-0">Adjust your area based on demand and your availability.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #serviceAreaMap {
+            z-index: 1;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        @if (Model.HasActiveArea && Model.ActiveArea != null)
+        {
+            <text>
+            document.addEventListener('DOMContentLoaded', function() {
+                var centerLat = @Model.ActiveArea.CenterLat;
+                var centerLng = @Model.ActiveArea.CenterLng;
+                var radiusKm = @Model.ActiveArea.RadiusKm;
+
+                var map = L.map('serviceAreaMap').setView([centerLat, centerLng], 12);
+
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '© OpenStreetMap contributors'
+                }).addTo(map);
+
+                // Add circle for service area
+                var circle = L.circle([centerLat, centerLng], {
+                    color: '#0d6efd',
+                    fillColor: '#0d6efd',
+                    fillOpacity: 0.2,
+                    radius: radiusKm * 1000 // Convert km to meters
+                }).addTo(map);
+
+                // Add center marker
+                var marker = L.marker([centerLat, centerLng]).addTo(map);
+                marker.bindPopup('<strong>@(Model.ActiveArea.AreaName ?? "Service Area Center")</strong><br>Radius: ' + radiusKm + ' km').openPopup();
+
+                // Fit map to circle bounds
+                map.fitBounds(circle.getBounds());
+            });
+            </text>
+        }
+    </script>
+}

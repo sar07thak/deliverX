@@ -1,593 +1,258 @@
-# BC (Business Consumer) Role Testing Guide
+# BC (Business Consumer) Testing Guide
 
 ## Role: BC (Business Consumer)
-**Hierarchy Level: 4**
-**Description:** Business users who send packages regularly, can subscribe to plans for discounts
+**Phone Number:** 7772223333
 
 ---
 
-## Pre-requisites
-- API running on `http://localhost:5205`
-- UI running on `http://localhost:3000`
-- At least one DP registered and online (for delivery matching)
+## Step 1: Login as BC
+
+1. Open http://localhost:5300/Account/Login
+2. Select **"Business"** role (building icon)
+3. Enter phone: `7772223333`
+4. Click **Send OTP**
+5. Enter the OTP shown on screen
+6. Click **Verify & Continue**
+
+**Expected:** Redirected directly to Dashboard (no registration required for BC)
 
 ---
 
-## What is a Business Consumer (BC)?
+## Step 2: Verify BC Dashboard
 
-A **Business Consumer (BC)** is a business entity that:
-- Registers with business details
-- Creates delivery orders regularly
-- Can subscribe to business plans for discounts
-- Tracks all sent deliveries
-- Rates delivery partners
-- Manages wallet for payments
-- Can apply promo codes
-- Files and tracks complaints
+After login, you should see:
 
----
+### Dashboard Stats
+- Total Deliveries: 0
+- Active Deliveries: 0
+- Wallet Balance: ₹0
+- Completed: 0
 
-## Method 1: Register via UI (Recommended)
-
-### Step 1: Open Login Page
-1. Open browser and go to `http://localhost:3000`
-2. You'll see the login page with role selection
-
-### Step 2: Select Business Role
-1. Click on **"Business"** option (with briefcase icon)
-2. The option will be highlighted with a blue border
-
-### Step 3: Enter Phone Number
-1. Enter phone number: `8888899999` (without +91)
-2. Click **"Send OTP"** button
-
-### Step 4: Verify OTP
-1. A success message will appear with the OTP (e.g., "OTP: 123456")
-2. Enter the 6-digit OTP shown in the message
-3. Click **"Verify & Login"**
-
-### Step 5: Dashboard Access
-- You will be redirected to `/dashboard` (BC Dashboard)
-- The navbar will show:
-  - **"DeliverX"** in the logo area
-  - Blue **"BUSINESS"** badge next to your phone number
-  - BC-specific navigation links
-
----
-
-## Method 2: Register via API (For Testing)
-
-### Step 1: Send OTP
-```bash
-curl -X POST http://localhost:5205/api/v1/auth/otp/send \
-  -H "Content-Type: application/json" \
-  -d "{\"phone\": \"8888899999\", \"role\": \"BC\"}"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "status": "OTP_SENT",
-    "expiresIn": 300,
-    "message": "OTP sent successfully. OTP: 123456 (expires in 5 minutes)"
-  }
-}
-```
-
-### Step 2: Verify OTP with BC Role
-```bash
-curl -X POST http://localhost:5205/api/v1/auth/otp/verify \
-  -H "Content-Type: application/json" \
-  -d "{\"phone\": \"8888899999\", \"otp\": \"123456\", \"role\": \"BC\", \"deviceId\": \"test-bc-device\"}"
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "accessToken": "eyJhbGciOiJIUzI1NiIs...",
-    "refreshToken": "...",
-    "expiresIn": 604800,
-    "user": {
-      "id": "abc12345-...",
-      "role": "BC",
-      "phone": "8888899999",
-      "profileComplete": true
-    }
-  }
-}
-```
-
-### Step 3: Save Token for API Testing
-```bash
-BC_TOKEN="eyJhbGciOiJIUzI1NiIs..."
-```
-
----
-
-## BC Dashboard Features (UI Testing)
-
-### Dashboard Overview
-After login, you'll see the main dashboard with:
-
-**Stats Cards:**
-| Card | Description |
-|------|-------------|
-| Total Deliveries | Number of deliveries created |
-| Active Deliveries | Deliveries in progress |
-| Wallet Balance | Current wallet balance |
-| Subscription | Current plan (if any) |
-
-**Quick Actions:**
-- Create New Delivery
-- View All Deliveries
+### Quick Actions
+- New Delivery button
+- View My Deliveries
 - Recharge Wallet
-- View Subscription Plans
 
-### Create Delivery Page (`/create-delivery`)
-Form to create a new delivery order:
-
-**Pickup Details:**
-| Field | Description |
-|-------|-------------|
-| Pickup Address | Full address with landmark |
-| Contact Name | Sender's name |
-| Contact Phone | Sender's phone |
-| Pickup Instructions | Special instructions |
-
-**Drop Details:**
-| Field | Description |
-|-------|-------------|
-| Drop Address | Recipient's full address |
-| Contact Name | Recipient's name |
-| Contact Phone | Recipient's phone |
-| Drop Instructions | Delivery instructions |
-
-**Package Details:**
-| Field | Description |
-|-------|-------------|
-| Weight (kg) | Package weight |
-| Type | parcel/document/fragile |
-| Dimensions | Length x Width x Height |
-| Value | Declared value (for insurance) |
-| Description | Package description |
-
-**Delivery Options:**
-| Field | Description |
-|-------|-------------|
-| Priority | ASAP / SCHEDULED / ECONOMY |
-| Scheduled Time | (if scheduled) |
-| Special Instructions | Any special requirements |
-
-### Deliveries List Page (`/deliveries`)
-Shows all your deliveries:
-
-**Filter Options:** All, Created, Assigned, In Transit, Delivered, Cancelled
-
-**Delivery List:**
-| Column | Description |
-|--------|-------------|
-| Tracking ID | Click to view details |
-| Status | Current status with color |
-| Pickup | Pickup location summary |
-| Drop | Drop location summary |
-| Amount | Delivery charge |
-| Created | Date created |
-| Actions | Track / Cancel buttons |
-
-### Wallet Page (`/wallet`)
-Manage your payment wallet:
-
-**Wallet Summary:**
-- Current Balance
-- Total Spent
-- Last Recharge
-
-**Actions:**
-- Recharge Wallet (UPI/Card/Net Banking)
-- View Transaction History
-
-**Transaction History:**
-| Column | Description |
-|--------|-------------|
-| Date | Transaction date |
-| Type | CREDIT / DEBIT |
-| Amount | Transaction amount |
-| Description | What the transaction was for |
-| Balance | Balance after transaction |
-
-### Subscriptions Page (`/subscriptions`)
-View and subscribe to business plans:
-
-**Available Plans:**
-| Plan | Features |
-|------|----------|
-| Basic | X deliveries/month, Y% discount |
-| Standard | More deliveries, higher discount |
-| Premium | Unlimited deliveries, max discount |
-
-**My Subscription:**
-- Current Plan
-- Valid Until
-- Deliveries Used/Remaining
-- Renewal Options
+### Navigation Sidebar
+- Dashboard
+- **Deliveries Section:**
+  - New Delivery
+  - My Deliveries
+- **Support Section:**
+  - My Complaints
+- **Account Section:**
+  - Wallet
+  - Profile
 
 ---
 
-## API Testing (With Token)
+## Step 3: Add Wallet Balance
 
-### Service Area & Pricing
+Before creating deliveries, add funds to wallet:
 
-#### Get Service Areas
-```bash
-curl -X GET "http://localhost:5205/api/v1/service-area?page=1&pageSize=10"
-```
+1. Click **Wallet** in sidebar
+2. Click **Add Money** button
+3. Enter amount: `1000`
+4. Select payment method (UPI/Card)
+5. Complete payment (simulated in dev mode)
 
-#### Check Serviceability
-```bash
-curl -X POST http://localhost:5205/api/v1/service-area/check \
-  -H "Content-Type: application/json" \
-  -d '{
-    "lat": 28.6139,
-    "lng": 77.2090
-  }'
-```
-
-#### Calculate Price
-```bash
-curl -X POST http://localhost:5205/api/v1/pricing/calculate \
-  -H "Authorization: Bearer $BC_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "pickupLat": 28.6139,
-    "pickupLng": 77.2090,
-    "dropLat": 28.6350,
-    "dropLng": 77.2250,
-    "packageWeightKg": 2.5,
-    "packageType": "parcel",
-    "vehicleType": "BIKE",
-    "priority": "ASAP"
-  }'
-```
-
-### Delivery Management
-
-#### Create Delivery
-```bash
-curl -X POST http://localhost:5205/api/v1/deliveries \
-  -H "Authorization: Bearer $BC_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "requesterType": "DBC",
-    "pickup": {
-      "lat": 28.6139,
-      "lng": 77.2090,
-      "address": "123 Business Park, Connaught Place, New Delhi",
-      "contactName": "BC Test User",
-      "contactPhone": "8888899999",
-      "instructions": "Please collect from reception"
-    },
-    "drop": {
-      "lat": 28.6350,
-      "lng": 77.2250,
-      "address": "456 Residential Colony, Defence Colony, New Delhi",
-      "contactName": "Test Recipient",
-      "contactPhone": "9876543210",
-      "instructions": "Ring doorbell twice"
-    },
-    "package": {
-      "weightKg": 2.5,
-      "type": "parcel",
-      "dimensions": {
-        "lengthCm": 30,
-        "widthCm": 20,
-        "heightCm": 15
-      },
-      "value": 500,
-      "description": "Business documents"
-    },
-    "priority": "ASAP",
-    "specialInstructions": "Handle with care"
-  }'
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "deliveryId": "abc123-...",
-  "trackingId": "DLX1234567",
-  "status": "CREATED",
-  "estimatedPrice": 150.00
-}
-```
-
-#### Get My Deliveries
-```bash
-curl -X GET "http://localhost:5205/api/v1/deliveries?page=1&pageSize=10" \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Get Delivery Details
-```bash
-curl -X GET http://localhost:5205/api/v1/deliveries/{deliveryId} \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Trigger DP Matching
-```bash
-curl -X POST http://localhost:5205/api/v1/deliveries/{deliveryId}/match \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Cancel Delivery
-```bash
-curl -X POST http://localhost:5205/api/v1/deliveries/{deliveryId}/cancel \
-  -H "Authorization: Bearer $BC_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"reason": "Test cancellation"}'
-```
-
-### Wallet Operations
-
-#### Get Wallet
-```bash
-curl -X GET http://localhost:5205/api/v1/wallet \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Get Transactions
-```bash
-curl -X GET "http://localhost:5205/api/v1/wallet/transactions?page=1&pageSize=10" \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Initiate Recharge
-```bash
-curl -X POST http://localhost:5205/api/v1/wallet/recharge \
-  -H "Authorization: Bearer $BC_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "amount": 1000,
-    "paymentMethod": "UPI"
-  }'
-```
-
-### Subscriptions
-
-#### Get Subscription Plans
-```bash
-curl -X GET http://localhost:5205/api/v1/subscriptions/plans
-```
-
-#### Get My Subscription
-```bash
-curl -X GET http://localhost:5205/api/v1/subscriptions/my \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Get Invoices
-```bash
-curl -X GET http://localhost:5205/api/v1/subscriptions/invoices \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-### Ratings
-
-#### Get My Behavior Index
-```bash
-curl -X GET http://localhost:5205/api/v1/ratings/behavior-index \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Submit Rating (after delivery)
-```bash
-curl -X POST http://localhost:5205/api/v1/ratings \
-  -H "Authorization: Bearer $BC_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "deliveryId": "{deliveryId}",
-    "targetId": "{dpUserId}",
-    "targetType": "DP",
-    "stars": 5,
-    "comment": "Excellent service!",
-    "tags": ["on-time", "polite"]
-  }'
-```
-
-### Complaints
-
-#### Get My Complaints
-```bash
-curl -X GET "http://localhost:5205/api/v1/complaints?page=1&pageSize=10" \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
-
-#### Create Complaint
-```bash
-curl -X POST http://localhost:5205/api/v1/complaints \
-  -H "Authorization: Bearer $BC_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "deliveryId": "{deliveryId}",
-    "category": "DELIVERY_ISSUE",
-    "description": "Package was damaged during delivery",
-    "priority": "MEDIUM"
-  }'
-```
-
-### Referrals
-
-#### Get My Referral Info
-```bash
-curl -X GET http://localhost:5205/api/v1/referrals/my \
-  -H "Authorization: Bearer $BC_TOKEN"
-```
+**Expected:** Wallet balance updates to ₹1000
 
 ---
 
-## BC Navigation Menu
+## Step 4: Create a New Delivery
 
-**Main Navigation Bar:**
-| Link | Destination |
-|------|-------------|
-| Dashboard | /dashboard |
-| Create Delivery | /create-delivery |
-| My Deliveries | /deliveries |
-| Wallet | /wallet |
+1. Click **New Delivery** in sidebar
+2. Fill the delivery form:
 
-**More Menu (Dropdown):**
-| Link | Description |
-|------|-------------|
-| Subscriptions | /subscriptions |
-| Ratings | /ratings |
-| Complaints | /complaints |
-| Referrals | /referrals |
-| Profile | /profile |
+### Pickup Details
+| Field | Value |
+|-------|-------|
+| Pickup Address | 123 Business Park, Connaught Place, Delhi |
+| Contact Name | BC Test User |
+| Contact Phone | 7772223333 |
+| Landmark | Near Metro Station |
 
----
+### Drop Details
+| Field | Value |
+|-------|-------|
+| Drop Address | 456 Residential Colony, Vasant Kunj, Delhi |
+| Contact Name | Test Recipient |
+| Contact Phone | 9876543210 |
+| Landmark | Blue Gate |
 
-## Role Badge Colors (UI Reference)
+### Package Details
+| Field | Value |
+|-------|-------|
+| Weight (kg) | 2 |
+| Package Type | Parcel |
+| Description | Business documents |
 
-| Role | Badge Color | Display Name |
-|------|-------------|--------------|
-| SuperAdmin | Red (#dc3545) | ADMIN |
-| DPCM | Purple (#6f42c1) | MANAGER |
-| DP | Yellow (#ffc107) | PARTNER |
-| **BC** | **Blue (#17a2b8)** | **BUSINESS** |
-| EC | Green (#28a745) | CONSUMER |
+3. Click **Calculate Price** (if available)
+4. Click **Create Delivery**
 
----
-
-## BC Capabilities Summary
-
-| Feature | Access Level | UI Location |
-|---------|--------------|-------------|
-| Create Deliveries | Yes | /create-delivery |
-| Track Deliveries | Own | /deliveries |
-| Cancel Deliveries | Own (before pickup) | /deliveries |
-| Manage Wallet | Own | /wallet |
-| Recharge Wallet | Yes | /wallet |
-| Subscribe to Plans | Yes | /subscriptions |
-| Rate DPs | After delivery | /ratings |
-| File Complaints | Yes | /complaints |
-| View Referrals | Own | /referrals |
-| Apply Promo Codes | Yes | /create-delivery |
+**Expected:** Delivery created successfully, tracking ID displayed
 
 ---
 
-## BC vs EC Comparison
+## Step 5: View My Deliveries
 
-| Feature | BC (Business) | EC (End Consumer) |
-|---------|---------------|-------------------|
-| Subscription Plans | Yes | Limited |
-| Bulk Discounts | Yes | No |
-| Business Dashboard | Yes | No |
-| Invoice Generation | Yes | No |
-| API Access | Yes | No |
-| Credit Terms | Available | No |
-| Priority Support | Yes | Standard |
+1. Click **My Deliveries** in sidebar
+2. Verify your delivery appears in the list
 
----
-
-## Delivery Flow for BC
-
-### Step 1: Check Serviceability
-Before creating a delivery, check if both pickup and drop locations are serviceable.
-
-### Step 2: Calculate Price
-Get estimated price based on distance, weight, and priority.
-
-### Step 3: Create Delivery
-Fill in all details and submit the delivery request.
-
-### Step 4: Payment
-- Wallet balance is checked
-- If sufficient: Amount is held
-- If insufficient: Prompt to recharge
-
-### Step 5: DP Matching
-System automatically finds available DPs in the area.
-
-### Step 6: Track Delivery
-Monitor real-time status updates:
-- CREATED → ASSIGNED → PICKED_UP → IN_TRANSIT → DELIVERED
-
-### Step 7: Rate & Review
-After delivery completion, rate the DP.
+### Delivery List Features:
+- [ ] Delivery card with tracking ID
+- [ ] Status badge (Created, Assigned, etc.)
+- [ ] Pickup and Drop addresses
+- [ ] Estimated price
+- [ ] Track button
+- [ ] Cancel button (if not yet picked up)
 
 ---
 
-## Troubleshooting
+## Step 6: Track a Delivery
 
-### Issue: "No DPs available" when creating delivery
-**Solution:**
-- Ensure DPs are registered in the area
-- DPs must be ONLINE and have completed KYC
-- Check service area coverage
+1. Click **Track** on a delivery
+2. View delivery details:
+   - Current status
+   - Pickup/Drop locations
+   - Assigned DP (if any)
+   - Status timeline
 
-### Issue: Wallet recharge fails
-**Solution:**
-- Check payment gateway connectivity
-- Try different payment method
-- Minimum recharge amount may apply
+---
 
-### Issue: Can't cancel delivery
-**Solution:**
-- Deliveries can only be cancelled before DP pickup
-- Once picked up, contact support
+## Step 7: Test Wallet
 
-### Issue: Delivery price too high
-**Solution:**
-- Check subscription plans for discounts
-- Apply promo codes if available
-- Try ECONOMY priority for lower price
+1. Click **Wallet** in sidebar
+2. Verify:
+   - [ ] Current balance displayed
+   - [ ] Transaction history (credits/debits)
+   - [ ] Add Money option
 
-### Issue: Subscription not reflecting
-**Solution:**
-- Logout and login again
-- Check subscription expiry date
-- Contact support if issue persists
+---
+
+## Step 8: File a Complaint
+
+1. Click **My Complaints** in sidebar
+2. Click **New Complaint** (if available)
+3. Fill complaint form:
+   - Select delivery (dropdown)
+   - Category: Delivery Issue
+   - Description: Test complaint
+4. Submit complaint
 
 ---
 
 ## Test Checklist
 
-- [ ] Login as BC via UI
-- [ ] Verify redirect to /dashboard
-- [ ] Check wallet balance
-- [ ] Recharge wallet (test payment)
-- [ ] Check service area coverage
-- [ ] Calculate delivery price
-- [ ] Create a new delivery
-- [ ] View delivery in list
-- [ ] Track delivery status
-- [ ] View subscription plans
-- [ ] Check subscription details
-- [ ] View complaints page
-- [ ] View referrals page
-- [ ] Test More dropdown menu links
-- [ ] Verify logout works
+- [ ] Login as BC (7772223333)
+- [ ] Dashboard loads directly (no registration)
+- [ ] Wallet page loads
+- [ ] Add money to wallet works
+- [ ] New Delivery form loads
+- [ ] Create delivery successfully
+- [ ] Delivery appears in My Deliveries
+- [ ] Track delivery works
+- [ ] Complaints page loads
+- [ ] Profile shows correct info
+- [ ] Logout works
 
 ---
 
-## Complete BC Test Flow
+## Expected Results
 
-1. **Register/Login as BC**
-2. **Recharge wallet** with test amount
-3. **Check serviceability** of test locations
-4. **Calculate price** for delivery
-5. **Create delivery** with all details
-6. **Track delivery** status changes
-7. **Rate DP** after delivery completes
-8. **Check wallet** for deduction
-9. **View transaction** history
-10. **Subscribe to plan** (optional)
+| Page | URL | Expected |
+|------|-----|----------|
+| Dashboard | /Dashboard | BC stats and quick actions |
+| New Delivery | /Delivery/Create | Delivery form |
+| My Deliveries | /Delivery | List of deliveries |
+| Track | /Delivery/Track/{id} | Delivery details |
+| Wallet | /Wallet | Balance and transactions |
+| Complaints | /Complaint | Complaint list |
+| Profile | /Account/Profile | BC user info |
 
 ---
 
-## Next Steps
-After completing BC testing, say **"yes"** to proceed with **EC (End Consumer)** role testing.
+## Create Delivery Form Fields
+
+### Pickup Details
+| Field | Required | Example |
+|-------|----------|---------|
+| Address | Yes | 123 Business Park |
+| Contact Name | Yes | BC User |
+| Contact Phone | Yes | 7772223333 |
+| Landmark | No | Near Metro |
+
+### Drop Details
+| Field | Required | Example |
+|-------|----------|---------|
+| Address | Yes | 456 Residential |
+| Contact Name | Yes | Recipient |
+| Contact Phone | Yes | 9876543210 |
+| Landmark | No | Blue Gate |
+
+### Package Details
+| Field | Required | Example |
+|-------|----------|---------|
+| Weight (kg) | Yes | 2 |
+| Type | Yes | Parcel |
+| Description | No | Documents |
+
+---
+
+## Delivery Status Flow
+
+```
+CREATED → ASSIGNED → PICKED_UP → IN_TRANSIT → DELIVERED
+    ↓
+CANCELLED (if cancelled before pickup)
+```
+
+### What BC Can Do:
+- **Create** new deliveries
+- **Track** delivery status
+- **Cancel** before pickup
+- **Rate** DP after delivery
+- **File complaint** if issues
+
+---
+
+## Troubleshooting
+
+### Can't create delivery
+- Check wallet balance (needs funds)
+- Ensure pickup/drop are valid addresses
+- Check if DPs are available in area
+
+### Delivery not assigned
+- DPs may be offline
+- Location may be outside service area
+- Wait a few minutes for DP matching
+
+### Can't cancel delivery
+- Already picked up (contact support)
+- Only possible before pickup
+
+### Wallet issues
+- Refresh page after payment
+- Check transaction history
+
+---
+
+## What Happens After Creating Delivery
+
+1. Delivery status: CREATED
+2. System finds available DPs
+3. DP accepts → Status: ASSIGNED
+4. DP picks up → Status: PICKED_UP
+5. DP in transit → Status: IN_TRANSIT
+6. DP delivers → Status: DELIVERED
+7. You can rate the DP
+
+---
+
+## Next Step
+
+Proceed to **05_EC_Test.md** to test as End Consumer.
+
+Or go back to **03_DP_Test.md** to accept and complete this delivery as a DP!

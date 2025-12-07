@@ -1,0 +1,39 @@
+@model DeliveryDost.Web.ViewModels.Complaint.ResolveComplaintViewModel
+@{ ViewData["Title"] = "Resolve Complaint"; }
+
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-check-circle me-2"></i>Resolve Complaint</h1>
+    <p class="page-subtitle">Complaint #@Model.ComplaintNumber</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-6">
+        <form asp-action="Resolve" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="ComplaintId" />
+            <input type="hidden" asp-for="ComplaintNumber" />
+
+            <div class="card">
+                <div class="card-header">Resolution Details</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Resolution" class="form-label">Resolution Action *</label>
+                        <select asp-for="Resolution" class="form-select" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Complaint.ResolveComplaintViewModel.Resolutions, "Value", "Text"))">
+                            <option value="">Select resolution</option>
+                        </select>
+                        <span asp-validation-for="Resolution" class="text-danger"></span>
+                    </div>
+                    <div class="mb-0">
+                        <label asp-for="ResolutionNotes" class="form-label">Resolution Notes *</label>
+                        <textarea asp-for="ResolutionNotes" class="form-control" rows="4" placeholder="Explain the resolution"></textarea>
+                        <span asp-validation-for="ResolutionNotes" class="text-danger"></span>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i>Resolve Complaint</button>
+                    <a asp-action="InspectorDashboard" class="btn btn-outline-secondary">Cancel</a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>

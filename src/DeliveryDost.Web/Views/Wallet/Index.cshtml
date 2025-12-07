@@ -1,0 +1,239 @@
+@model DeliveryDost.Web.ViewModels.Wallet.WalletDashboardViewModel
+@{
+    ViewData["Title"] = "Wallet";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-wallet2 me-2"></i>My Wallet
+            </h1>
+            <p class="page-subtitle">Manage your balance and transactions</p>
+        </div>
+        @if (Model.IsRequester)
+        {
+            <a asp-action="TopUp" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Add Money
+            </a>
+        }
+    </div>
+</div>
+
+<div class="row">
+    <!-- Balance Card -->
+    <div class="col-lg-4 mb-4">
+        <div class="card bg-primary text-white h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-start mb-4">
+                    <div>
+                        <small class="text-white-50">Available Balance</small>
+                        <h2 class="mb-0">₹@Model.AvailableBalance.ToString("N2")</h2>
+                    </div>
+                    <i class="bi bi-wallet2 fs-1 text-white-50"></i>
+                </div>
+
+                @if (Model.HoldBalance > 0)
+                {
+                    <div class="d-flex justify-content-between border-top border-white-50 pt-3 mt-3">
+                        <div>
+                            <small class="text-white-50 d-block">On Hold</small>
+                            <span>₹@Model.HoldBalance.ToString("N2")</span>
+                        </div>
+                        <div class="text-end">
+                            <small class="text-white-50 d-block">Total</small>
+                            <span>₹@Model.Balance.ToString("N2")</span>
+                        </div>
+                    </div>
+                }
+            </div>
+            <div class="card-footer bg-transparent border-0">
+                <div class="d-grid gap-2">
+                    @if (Model.IsRequester)
+                    {
+                        <a asp-action="TopUp" class="btn btn-light">
+                            <i class="bi bi-plus-circle me-1"></i>Add Money
+                        </a>
+                    }
+                    <a asp-action="Transactions" class="btn btn-outline-light">
+                        <i class="bi bi-clock-history me-1"></i>View History
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Earnings Card (DP only) -->
+    @if (Model.IsDP && Model.Earnings != null)
+    {
+        <div class="col-lg-8 mb-4">
+            <div class="card h-100">
+                <div class="card-header">
+                    <i class="bi bi-cash-coin me-2"></i>Earnings Summary
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center">
+                                <small class="text-muted d-block">Today</small>
+                                <h4 class="mb-0 text-success">₹@Model.Earnings.TodayEarnings.ToString("N0")</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center">
+                                <small class="text-muted d-block">This Week</small>
+                                <h4 class="mb-0">₹@Model.Earnings.WeekEarnings.ToString("N0")</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center">
+                                <small class="text-muted d-block">This Month</small>
+                                <h4 class="mb-0">₹@Model.Earnings.MonthEarnings.ToString("N0")</h4>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6 mb-3">
+                            <div class="text-center">
+                                <small class="text-muted d-block">Total</small>
+                                <h4 class="mb-0">₹@Model.Earnings.TotalEarnings.ToString("N0")</h4>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr />
+
+                    <div class="row">
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <span class="badge bg-warning text-dark p-2">
+                                        <i class="bi bi-hourglass-split"></i>
+                                    </span>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Pending Settlement</small>
+                                    <strong>₹@Model.Earnings.PendingSettlement.ToString("N0")</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4 mb-3 mb-md-0">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <span class="badge bg-success p-2">
+                                        <i class="bi bi-check-circle"></i>
+                                    </span>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Total Settled</small>
+                                    <strong>₹@Model.Earnings.TotalSettled.ToString("N0")</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="d-flex align-items-center">
+                                <div class="me-3">
+                                    <span class="badge bg-info p-2">
+                                        <i class="bi bi-truck"></i>
+                                    </span>
+                                </div>
+                                <div>
+                                    <small class="text-muted d-block">Avg per Delivery</small>
+                                    <strong>₹@Model.Earnings.AveragePerDelivery.ToString("N0")</strong>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a asp-action="Settlements" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-bank me-1"></i>View Settlements
+                    </a>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <!-- Quick Stats (Requester) -->
+        <div class="col-lg-8 mb-4">
+            <div class="row h-100">
+                <div class="col-md-6 mb-4 mb-md-0">
+                    <div class="card h-100 border-success">
+                        <div class="card-body text-center">
+                            <i class="bi bi-arrow-down-circle text-success fs-1 mb-2"></i>
+                            <h6 class="text-muted">Recent Credits</h6>
+                            <h3 class="text-success">₹@Model.RecentTransactions.Where(t => t.IsCredit).Sum(t => t.Amount).ToString("N0")</h3>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card h-100 border-danger">
+                        <div class="card-body text-center">
+                            <i class="bi bi-arrow-up-circle text-danger fs-1 mb-2"></i>
+                            <h6 class="text-muted">Recent Debits</h6>
+                            <h3 class="text-danger">₹@Model.RecentTransactions.Where(t => !t.IsCredit).Sum(t => t.Amount).ToString("N0")</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Recent Transactions -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>
+            <i class="bi bi-clock-history me-2"></i>Recent Transactions
+        </span>
+        <a asp-action="Transactions" class="btn btn-sm btn-outline-primary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        @if (Model.RecentTransactions.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Transaction</th>
+                            <th>Description</th>
+                            <th class="text-end">Amount</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var tx in Model.RecentTransactions)
+                        {
+                            <tr>
+                                <td>
+                                    <span class="badge @tx.CategoryBadgeClass me-2">
+                                        <i class="bi @tx.CategoryIcon"></i>
+                                    </span>
+                                    @tx.Category.Replace("_", " ")
+                                </td>
+                                <td>
+                                    <span class="text-muted">@tx.Description</span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="@tx.AmountClass fw-bold">
+                                        @tx.AmountPrefix₹@tx.Amount.ToString("N2")
+                                    </span>
+                                </td>
+                                <td>
+                                    <small class="text-muted">@tx.CreatedAt.ToString("dd MMM, hh:mm tt")</small>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox display-1 text-muted mb-3"></i>
+                <h5>No Transactions Yet</h5>
+                <p class="text-muted mb-0">Your transaction history will appear here.</p>
+            </div>
+        }
+    </div>
+</div>

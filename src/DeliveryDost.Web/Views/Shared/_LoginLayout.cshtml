@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - DeliveryDost</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" />
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-dark: #1d4ed8;
+            --secondary: #7c3aed;
+            --accent: #f59e0b;
+            --dark: #0f172a;
+            --text: #334155;
+            --text-muted: #64748b;
+            --border: #e2e8f0;
+            --light: #f8fafc;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            min-height: 100vh;
+            background: var(--light);
+            display: flex;
+        }
+
+        /* Left Side - Branding */
+        .login-branding {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 3rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .login-branding::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+
+        .branding-content {
+            position: relative;
+            z-index: 1;
+            max-width: 480px;
+        }
+
+        .branding-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 2rem;
+        }
+
+        .branding-logo i {
+            font-size: 2.5rem;
+            color: var(--accent);
+        }
+
+        .branding-title {
+            font-size: 2.5rem;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1.2;
+            margin-bottom: 1rem;
+        }
+
+        .branding-subtitle {
+            font-size: 1.1rem;
+            color: rgba(255,255,255,0.85);
+            line-height: 1.6;
+            margin-bottom: 2.5rem;
+        }
+
+        .branding-features {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+
+        .branding-feature {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            color: #fff;
+        }
+
+        .branding-feature-icon {
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.15);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+
+        .branding-feature span {
+            font-size: 0.95rem;
+            font-weight: 500;
+        }
+
+        /* Right Side - Form */
+        .login-form-container {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+            background: #fff;
+        }
+
+        .login-form-wrapper {
+            width: 100%;
+            max-width: 440px;
+        }
+
+        .login-header {
+            text-align: center;
+            margin-bottom: 2.5rem;
+        }
+
+        .login-header-icon {
+            width: 70px;
+            height: 70px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1.5rem;
+        }
+
+        .login-header-icon i {
+            font-size: 2rem;
+            color: #fff;
+        }
+
+        .login-header h1 {
+            font-size: 1.75rem;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 0.5rem;
+        }
+
+        .login-header p {
+            color: var(--text-muted);
+            font-size: 0.95rem;
+        }
+
+        /* Role Grid */
+        .role-section-title {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            margin-bottom: 1rem;
+        }
+
+        .role-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .role-option {
+            position: relative;
+        }
+
+        .role-option input {
+            position: absolute;
+            opacity: 0;
+        }
+
+        .role-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 1rem 0.5rem;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: center;
+            background: #fff;
+        }
+
+        .role-option label:hover {
+            border-color: #cbd5e1;
+            background: var(--light);
+        }
+
+        .role-option label i {
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+            color: var(--text-muted);
+            transition: color 0.2s;
+        }
+
+        .role-option label span {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text);
+        }
+
+        .role-option input:checked + label {
+            border-color: var(--primary);
+            background: rgba(37,99,235,0.05);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .role-option input:checked + label i {
+            color: var(--primary);
+        }
+
+        /* Form Controls */
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-label {
+            display: block;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 0.5rem;
+        }
+
+        .input-group-custom {
+            display: flex;
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.2s;
+        }
+
+        .input-group-custom:focus-within {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37,99,235,0.1);
+        }
+
+        .input-group-custom .prefix {
+            display: flex;
+            align-items: center;
+            padding: 0 1rem;
+            background: var(--light);
+            color: var(--text-muted);
+            font-weight: 500;
+            font-size: 0.95rem;
+            border-right: 2px solid var(--border);
+        }
+
+        .input-group-custom input {
+            flex: 1;
+            padding: 0.875rem 1rem;
+            border: none;
+            font-size: 1rem;
+            outline: none;
+            background: #fff;
+        }
+
+        .input-group-custom input::placeholder {
+            color: #94a3b8;
+        }
+
+        .validation-message {
+            font-size: 0.8rem;
+            color: #ef4444;
+            margin-top: 0.375rem;
+        }
+
+        /* Submit Button */
+        .btn-submit {
+            width: 100%;
+            padding: 1rem;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: #fff;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-submit:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102,126,234,0.4);
+        }
+
+        .btn-submit:active {
+            transform: translateY(0);
+        }
+
+        /* Alert */
+        .alert-custom {
+            padding: 1rem;
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: 12px;
+            color: #991b1b;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+
+        .alert-custom i {
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+
+        /* Footer */
+        .login-footer {
+            text-align: center;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid var(--border);
+        }
+
+        .login-footer p {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .login-footer a {
+            color: var(--primary);
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            text-decoration: none;
+            margin-bottom: 1.5rem;
+            transition: color 0.2s;
+        }
+
+        .back-link:hover {
+            color: var(--primary);
+        }
+
+        /* Responsive */
+        @@media (max-width: 991px) {
+            .login-branding {
+                display: none;
+            }
+
+            .login-form-container {
+                flex: 1;
+            }
+        }
+
+        @@media (max-width: 575px) {
+            .role-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+
+            .role-option:nth-child(5) {
+                grid-column: span 2;
+            }
+
+            .login-form-container {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Left Branding Section -->
+    <div class="login-branding">
+        <div class="branding-content">
+            <div class="branding-logo">
+                <i class="bi bi-truck"></i>
+                DeliveryDost
+            </div>
+            <h1 class="branding-title">Your Trusted Delivery Partner</h1>
+            <p class="branding-subtitle">
+                Join thousands of happy customers and delivery partners. Fast, reliable,
+                and secure delivery services at your fingertips.
+            </p>
+            <div class="branding-features">
+                <div class="branding-feature">
+                    <div class="branding-feature-icon">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                    <span>Lightning fast same-day delivery</span>
+                </div>
+                <div class="branding-feature">
+                    <div class="branding-feature-icon">
+                        <i class="bi bi-geo-alt-fill"></i>
+                    </div>
+                    <span>Real-time package tracking</span>
+                </div>
+                <div class="branding-feature">
+                    <div class="branding-feature-icon">
+                        <i class="bi bi-shield-check"></i>
+                    </div>
+                    <span>Secure & insured deliveries</span>
+                </div>
+                <div class="branding-feature">
+                    <div class="branding-feature-icon">
+                        <i class="bi bi-cash-coin"></i>
+                    </div>
+                    <span>Best prices, no hidden charges</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Form Section -->
+    <div class="login-form-container">
+        <div class="login-form-wrapper">
+            @RenderBody()
+        </div>
+    </div>
+
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+    <script src="~/lib/jquery-validation-unobtrusive/dist/jquery.validate.unobtrusive.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

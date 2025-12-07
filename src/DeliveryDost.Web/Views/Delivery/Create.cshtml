@@ -1,0 +1,375 @@
+@model DeliveryDost.Web.ViewModels.Delivery.CreateDeliveryViewModel
+@{
+    ViewData["Title"] = "Create Delivery";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Create New Delivery</h1>
+    <p class="page-subtitle">Enter pickup and drop locations to book a delivery partner</p>
+</div>
+
+<form asp-action="Create" method="post" id="createDeliveryForm">
+    @Html.AntiForgeryToken()
+
+    <div class="row">
+        <!-- Left Column: Form -->
+        <div class="col-lg-6 mb-4">
+            <!-- Pickup Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-success text-white">
+                    <i class="bi bi-geo-alt-fill me-2"></i> Pickup Location
+                </div>
+                <div class="card-body">
+                    <input type="hidden" asp-for="PickupLat" id="pickupLat" />
+                    <input type="hidden" asp-for="PickupLng" id="pickupLng" />
+
+                    <div class="mb-3">
+                        <label asp-for="PickupAddress" class="form-label">Address *</label>
+                        <div class="input-group">
+                            <input asp-for="PickupAddress" class="form-control" id="pickupAddress" placeholder="Enter pickup address" />
+                            <button type="button" class="btn btn-outline-secondary" onclick="searchAddress('pickup')">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="PickupAddress" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PickupContactName" class="form-label">Contact Name</label>
+                            <input asp-for="PickupContactName" class="form-control" placeholder="Optional" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PickupContactPhone" class="form-label">Contact Phone</label>
+                            <input asp-for="PickupContactPhone" class="form-control" placeholder="Optional" />
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="PickupInstructions" class="form-label">Pickup Instructions</label>
+                        <textarea asp-for="PickupInstructions" class="form-control" rows="2" placeholder="E.g., Ring doorbell, call on arrival"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Drop Section -->
+            <div class="card mb-4">
+                <div class="card-header bg-danger text-white">
+                    <i class="bi bi-geo-alt-fill me-2"></i> Drop Location
+                </div>
+                <div class="card-body">
+                    <input type="hidden" asp-for="DropLat" id="dropLat" />
+                    <input type="hidden" asp-for="DropLng" id="dropLng" />
+
+                    <div class="mb-3">
+                        <label asp-for="DropAddress" class="form-label">Address *</label>
+                        <div class="input-group">
+                            <input asp-for="DropAddress" class="form-control" id="dropAddress" placeholder="Enter drop address" />
+                            <button type="button" class="btn btn-outline-secondary" onclick="searchAddress('drop')">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <span asp-validation-for="DropAddress" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DropContactName" class="form-label">Recipient Name</label>
+                            <input asp-for="DropContactName" class="form-control" placeholder="Optional" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="DropContactPhone" class="form-label">Recipient Phone *</label>
+                            <input asp-for="DropContactPhone" class="form-control" placeholder="Required" />
+                            <span asp-validation-for="DropContactPhone" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="DropInstructions" class="form-label">Drop Instructions</label>
+                        <textarea asp-for="DropInstructions" class="form-control" rows="2" placeholder="E.g., Leave at door, hand to recipient"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Package Section -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-box me-2"></i> Package Details
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PackageType" class="form-label">Package Type *</label>
+                            <select asp-for="PackageType" class="form-select" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Delivery.CreateDeliveryViewModel.PackageTypes, "Value", "Text"))"></select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="WeightKg" class="form-label">Weight (kg) *</label>
+                            <input asp-for="WeightKg" type="number" step="0.1" min="0.1" max="100" class="form-control" id="weightKg" />
+                            <span asp-validation-for="WeightKg" class="text-danger"></span>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="PackageValue" class="form-label">Package Value (₹)</label>
+                            <input asp-for="PackageValue" type="number" class="form-control" placeholder="Optional" />
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Priority" class="form-label">Priority *</label>
+                            <select asp-for="Priority" class="form-select" id="priority" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Delivery.CreateDeliveryViewModel.PriorityOptions, "Value", "Text"))"></select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="scheduledTimeContainer" style="display: none;">
+                        <label asp-for="ScheduledAt" class="form-label">Scheduled Time</label>
+                        <input asp-for="ScheduledAt" type="datetime-local" class="form-control" />
+                    </div>
+
+                    <div class="mb-0">
+                        <label asp-for="PackageDescription" class="form-label">Description</label>
+                        <textarea asp-for="PackageDescription" class="form-control" rows="2" placeholder="Brief description of package contents"></textarea>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Map & Summary -->
+        <div class="col-lg-6 mb-4">
+            <!-- Map -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-map me-2"></i> Route Map
+                    <small class="text-muted ms-2">(Click to set locations)</small>
+                </div>
+                <div class="card-body p-0">
+                    <div id="routeMap" style="height: 350px;"></div>
+                </div>
+                <div class="card-footer">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <span class="badge bg-success me-2">
+                                <i class="bi bi-geo-alt-fill"></i> Pickup
+                            </span>
+                            <span class="badge bg-danger">
+                                <i class="bi bi-geo-alt-fill"></i> Drop
+                            </span>
+                        </div>
+                        <small class="text-muted" id="mapInstructions">
+                            Click map to set pickup, then drop
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Price Estimate -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-calculator me-2"></i> Price Estimate
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <small class="text-muted d-block">Distance</small>
+                            <h4 class="mb-0" id="estimatedDistance">-- km</h4>
+                        </div>
+                        <div class="col-6">
+                            <small class="text-muted d-block">Estimated Price</small>
+                            <h4 class="mb-0 text-success" id="estimatedPrice">₹ --</h4>
+                        </div>
+                    </div>
+                    <p class="text-muted small text-center mt-2 mb-0">
+                        Final price may vary based on actual distance
+                    </p>
+                </div>
+            </div>
+
+            <!-- Special Instructions -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <i class="bi bi-chat-text me-2"></i> Special Instructions
+                </div>
+                <div class="card-body">
+                    <textarea asp-for="SpecialInstructions" class="form-control" rows="3" placeholder="Any special handling instructions for the delivery partner"></textarea>
+                </div>
+            </div>
+
+            <!-- Submit -->
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-primary btn-lg" id="submitBtn">
+                    <i class="bi bi-truck me-2"></i> Create Delivery
+                </button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #routeMap { z-index: 1; }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initial locations
+            var pickupLat = @Model.PickupLat;
+            var pickupLng = @Model.PickupLng;
+            var dropLat = @Model.DropLat;
+            var dropLng = @Model.DropLng;
+
+            // Map setup
+            var map = L.map('routeMap').setView([pickupLat, pickupLng], 13);
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Custom icons
+            var pickupIcon = L.divIcon({
+                html: '<i class="bi bi-geo-alt-fill text-success" style="font-size: 24px;"></i>',
+                className: 'custom-marker',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24]
+            });
+
+            var dropIcon = L.divIcon({
+                html: '<i class="bi bi-geo-alt-fill text-danger" style="font-size: 24px;"></i>',
+                className: 'custom-marker',
+                iconSize: [24, 24],
+                iconAnchor: [12, 24]
+            });
+
+            // Markers
+            var pickupMarker = L.marker([pickupLat, pickupLng], { icon: pickupIcon, draggable: true }).addTo(map);
+            var dropMarker = L.marker([dropLat, dropLng], { icon: dropIcon, draggable: true }).addTo(map);
+
+            // Route line
+            var routeLine = L.polyline([[pickupLat, pickupLng], [dropLat, dropLng]], {
+                color: '#0d6efd',
+                weight: 3,
+                dashArray: '10, 10'
+            }).addTo(map);
+
+            var clickMode = 'pickup'; // Toggle between pickup and drop
+
+            function updatePickup(lat, lng) {
+                pickupMarker.setLatLng([lat, lng]);
+                document.getElementById('pickupLat').value = lat.toFixed(6);
+                document.getElementById('pickupLng').value = lng.toFixed(6);
+                updateRoute();
+            }
+
+            function updateDrop(lat, lng) {
+                dropMarker.setLatLng([lat, lng]);
+                document.getElementById('dropLat').value = lat.toFixed(6);
+                document.getElementById('dropLng').value = lng.toFixed(6);
+                updateRoute();
+            }
+
+            function updateRoute() {
+                var pickup = pickupMarker.getLatLng();
+                var drop = dropMarker.getLatLng();
+                routeLine.setLatLngs([pickup, drop]);
+
+                // Fit bounds
+                var bounds = L.latLngBounds([pickup, drop]);
+                map.fitBounds(bounds, { padding: [50, 50] });
+
+                // Calculate price
+                calculatePrice();
+            }
+
+            function calculatePrice() {
+                var pickupPos = pickupMarker.getLatLng();
+                var dropPos = dropMarker.getLatLng();
+                var weight = parseFloat(document.getElementById('weightKg').value) || 1;
+
+                fetch('@Url.Action("CalculatePrice")', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        pickupLat: pickupPos.lat,
+                        pickupLng: pickupPos.lng,
+                        dropLat: dropPos.lat,
+                        dropLng: dropPos.lng,
+                        weightKg: weight
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('estimatedDistance').textContent = data.distanceKm + ' km';
+                    document.getElementById('estimatedPrice').textContent = '₹ ' + data.estimatedPrice;
+                })
+                .catch(err => console.error('Price calculation error:', err));
+            }
+
+            // Map click handler
+            map.on('click', function(e) {
+                if (clickMode === 'pickup') {
+                    updatePickup(e.latlng.lat, e.latlng.lng);
+                    clickMode = 'drop';
+                    document.getElementById('mapInstructions').textContent = 'Now click to set drop location';
+                } else {
+                    updateDrop(e.latlng.lat, e.latlng.lng);
+                    clickMode = 'pickup';
+                    document.getElementById('mapInstructions').textContent = 'Click to update pickup location';
+                }
+            });
+
+            // Marker drag handlers
+            pickupMarker.on('dragend', function(e) {
+                var pos = e.target.getLatLng();
+                updatePickup(pos.lat, pos.lng);
+            });
+
+            dropMarker.on('dragend', function(e) {
+                var pos = e.target.getLatLng();
+                updateDrop(pos.lat, pos.lng);
+            });
+
+            // Weight change handler
+            document.getElementById('weightKg').addEventListener('change', calculatePrice);
+
+            // Priority change handler
+            document.getElementById('priority').addEventListener('change', function() {
+                var scheduledContainer = document.getElementById('scheduledTimeContainer');
+                scheduledContainer.style.display = this.value === 'SCHEDULED' ? 'block' : 'none';
+            });
+
+            // Address search function
+            window.searchAddress = function(type) {
+                var addressInput = document.getElementById(type + 'Address');
+                var query = addressInput.value;
+                if (!query) return;
+
+                fetch('https://nominatim.openstreetmap.org/search?format=json&q=' + encodeURIComponent(query + ', India'))
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data && data.length > 0) {
+                            var lat = parseFloat(data[0].lat);
+                            var lng = parseFloat(data[0].lon);
+                            if (type === 'pickup') {
+                                updatePickup(lat, lng);
+                            } else {
+                                updateDrop(lat, lng);
+                            }
+                            map.setView([lat, lng], 15);
+                        } else {
+                            alert('Location not found. Try a different search term.');
+                        }
+                    })
+                    .catch(err => {
+                        console.error('Search error:', err);
+                        alert('Search failed. Please try again.');
+                    });
+            };
+
+            // Initial price calculation
+            calculatePrice();
+        });
+    </script>
+}

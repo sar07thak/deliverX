@@ -1,0 +1,57 @@
+@model DeliveryDost.Web.ViewModels.Complaint.CreateComplaintViewModel
+@{ ViewData["Title"] = "File Complaint"; }
+
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-exclamation-triangle me-2"></i>File Complaint</h1>
+    <p class="page-subtitle">Report an issue with your delivery</p>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card mb-4">
+            <div class="card-header">Delivery Information</div>
+            <div class="card-body">
+                <p><strong>Delivery:</strong> @Model.DeliveryNumber</p>
+                @if (!string.IsNullOrEmpty(Model.AgainstName))
+                {
+                    <p><strong>Against:</strong> @Model.AgainstName (@Model.AgainstType)</p>
+                }
+            </div>
+        </div>
+
+        <form asp-action="Create" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" asp-for="DeliveryId" />
+            <input type="hidden" asp-for="AgainstId" />
+            <input type="hidden" asp-for="AgainstType" />
+
+            <div class="card mb-4">
+                <div class="card-header">Complaint Details</div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label asp-for="Category" class="form-label">Category *</label>
+                        <select asp-for="Category" class="form-select" asp-items="@(new SelectList(DeliveryDost.Web.ViewModels.Complaint.CreateComplaintViewModel.Categories, "Value", "Text"))">
+                            <option value="">Select category</option>
+                        </select>
+                        <span asp-validation-for="Category" class="text-danger"></span>
+                    </div>
+                    <div class="mb-3">
+                        <label asp-for="Subject" class="form-label">Subject *</label>
+                        <input asp-for="Subject" class="form-control" placeholder="Brief summary of the issue" />
+                        <span asp-validation-for="Subject" class="text-danger"></span>
+                    </div>
+                    <div class="mb-0">
+                        <label asp-for="Description" class="form-label">Description *</label>
+                        <textarea asp-for="Description" class="form-control" rows="5" placeholder="Provide detailed description"></textarea>
+                        <span asp-validation-for="Description" class="text-danger"></span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="d-grid gap-2">
+                <button type="submit" class="btn btn-danger btn-lg"><i class="bi bi-send me-2"></i>Submit Complaint</button>
+                <a asp-controller="Delivery" asp-action="Details" asp-route-id="@Model.DeliveryId" class="btn btn-outline-secondary">Cancel</a>
+            </div>
+        </form>
+    </div>
+</div>

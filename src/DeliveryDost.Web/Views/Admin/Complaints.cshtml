@@ -1,0 +1,123 @@
+@model DeliveryDost.Web.ViewModels.Admin.ComplaintsListViewModel
+@{ ViewData["Title"] = "Complaints Management"; }
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title"><i class="bi bi-exclamation-circle me-2"></i>Complaints Management</h1>
+            <p class="page-subtitle">View and manage customer complaints</p>
+        </div>
+        <span class="badge bg-danger fs-6">@Model.TotalCount Complaints</span>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Filter by Status</label>
+                <select name="status" class="form-select" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="OPEN" selected="@(Model.StatusFilter == "OPEN")">Open</option>
+                    <option value="IN_PROGRESS" selected="@(Model.StatusFilter == "IN_PROGRESS")">In Progress</option>
+                    <option value="RESOLVED" selected="@(Model.StatusFilter == "RESOLVED")">Resolved</option>
+                    <option value="CLOSED" selected="@(Model.StatusFilter == "CLOSED")">Closed</option>
+                </select>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <a asp-action="Complaints" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Clear Filters
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Complaints Table -->
+<div class="card">
+    <div class="card-body p-0">
+        @if (Model.Complaints.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Ticket</th>
+                            <th>Category</th>
+                            <th>Priority</th>
+                            <th>Status</th>
+                            <th>Filed By</th>
+                            <th>Date</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var complaint in Model.Complaints)
+                        {
+                            <tr>
+                                <td>
+                                    <strong>#@complaint.TicketNumber</strong>
+                                </td>
+                                <td>
+                                    @complaint.Category.Replace("_", " ")
+                                </td>
+                                <td>
+                                    <span class="badge @complaint.PriorityBadgeClass">@complaint.Priority</span>
+                                </td>
+                                <td>
+                                    <span class="badge @complaint.StatusBadgeClass">@complaint.Status.Replace("_", " ")</span>
+                                </td>
+                                <td>
+                                    <small>@complaint.CreatedByPhone</small>
+                                </td>
+                                <td>
+                                    <small>@complaint.CreatedAt.ToString("dd MMM yyyy")</small>
+                                </td>
+                                <td class="text-end">
+                                    <a asp-controller="Complaint" asp-action="Details" asp-route-id="@complaint.Id" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-chat-square-text text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-3">No complaints found</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            @if (Model.CurrentPage > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="Complaints" asp-route-page="@(Model.CurrentPage - 1)" asp-route-status="@Model.StatusFilter">Previous</a>
+                </li>
+            }
+            @for (int i = 1; i <= Model.TotalPages; i++)
+            {
+                <li class="page-item @(Model.CurrentPage == i ? "active" : "")">
+                    <a class="page-link" asp-action="Complaints" asp-route-page="@i" asp-route-status="@Model.StatusFilter">@i</a>
+                </li>
+            }
+            @if (Model.CurrentPage < Model.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="Complaints" asp-route-page="@(Model.CurrentPage + 1)" asp-route-status="@Model.StatusFilter">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}

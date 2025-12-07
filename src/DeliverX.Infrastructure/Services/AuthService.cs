@@ -323,6 +323,41 @@ public class AuthService : IAuthService
         return result;
     }
 
+    public async Task<Result> UpdateProfileAsync(Guid userId, UpdateProfileRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
+        if (user == null)
+            return Result.Failure("User not found");
+
+        if (!string.IsNullOrWhiteSpace(request.FullName))
+            user.FullName = request.FullName;
+
+        if (!string.IsNullOrWhiteSpace(request.Email))
+            user.Email = request.Email;
+
+        user.UpdatedAt = DateTime.UtcNow;
+        await _context.SaveChangesAsync(cancellationToken);
+
+        return Result.Success();
+    }
+
+    public async Task<UserProfileDto?> GetUserProfileAsync(Guid userId, CancellationToken cancellationToken = default)
+    {
+        var user = await _context.Users.FindAsync(new object[] { userId }, cancellationToken);
+        if (user == null) return null;
+
+        return new UserProfileDto
+        {
+            Id = user.Id,
+            Phone = user.Phone,
+            Email = user.Email,
+            FullName = user.FullName,
+            Role = user.Role,
+            IsActive = user.IsActive,
+            CreatedAt = user.CreatedAt
+        };
+    }
+
     // TOTP verification - implemented below
     private bool VerifyTotp(string totpCode, string totpSecret)
     {

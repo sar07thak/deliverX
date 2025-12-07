@@ -1,0 +1,196 @@
+@model List<DeliveryDost.Web.ViewModels.Dpcm.DPSummaryItem>
+@{ ViewData["Title"] = "My Delivery Partners"; }
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title"><i class="bi bi-people me-2"></i>My Delivery Partners</h1>
+            <p class="page-subtitle">Manage your network of delivery partners</p>
+        </div>
+        <span class="badge bg-primary fs-6">@Model.Count DPs</span>
+    </div>
+</div>
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    @{
+        var activeDPs = Model.Count(d => d.IsActive);
+        var pendingKyc = Model.Count(d => d.KycStatus == "PENDING");
+        var totalDeliveries = Model.Sum(d => d.TotalDeliveries);
+    }
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h3 class="text-primary mb-0">@Model.Count</h3>
+                <small class="text-muted">Total DPs</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h3 class="text-success mb-0">@activeDPs</h3>
+                <small class="text-muted">Active DPs</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h3 class="text-warning mb-0">@pendingKyc</h3>
+                <small class="text-muted">Pending KYC</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <h3 class="text-info mb-0">@totalDeliveries</h3>
+                <small class="text-muted">Total Deliveries</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Share Referral Code -->
+<div class="card mb-4 bg-light">
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="mb-1"><i class="bi bi-share me-2"></i>Grow Your Network</h5>
+                <p class="text-muted mb-0">Share your referral code with potential delivery partners to add them to your network.</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <div class="input-group">
+                    <input type="text" class="form-control font-monospace" id="referralCode" value="DPCM12345" readonly />
+                    <button class="btn btn-primary" onclick="copyReferralCode()">
+                        <i class="bi bi-clipboard"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- DPs List -->
+<div class="card">
+    <div class="card-header">
+        <i class="bi bi-list-ul me-2"></i>Delivery Partners
+    </div>
+    <div class="card-body p-0">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Partner</th>
+                            <th>Status</th>
+                            <th>KYC</th>
+                            <th>Deliveries</th>
+                            <th>Rating</th>
+                            <th>Earnings</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var dp in Model)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <div class="avatar-sm bg-warning rounded-circle d-flex align-items-center justify-content-center me-2" style="width: 40px; height: 40px;">
+                                            <i class="bi bi-person text-dark"></i>
+                                        </div>
+                                        <div>
+                                            <strong>@dp.Name</strong>
+                                            <br />
+                                            <small class="text-muted">@dp.Phone</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    <span class="badge @(dp.IsActive ? "bg-success" : "bg-secondary")">
+                                        @(dp.IsActive ? "Active" : "Inactive")
+                                    </span>
+                                    @if (dp.IsOnline)
+                                    {
+                                        <span class="badge bg-primary ms-1">Online</span>
+                                    }
+                                </td>
+                                <td>
+                                    @{
+                                        var kycBadgeClass = dp.KycStatus switch
+                                        {
+                                            "APPROVED" => "bg-success",
+                                            "PENDING" => "bg-warning text-dark",
+                                            "REJECTED" => "bg-danger",
+                                            _ => "bg-secondary"
+                                        };
+                                    }
+                                    <span class="badge @kycBadgeClass">@dp.KycStatus</span>
+                                </td>
+                                <td>@dp.TotalDeliveries</td>
+                                <td>
+                                    <i class="bi bi-star-fill text-warning"></i> @dp.Rating.ToString("F1")
+                                </td>
+                                <td>
+                                    <strong class="text-success">₹@dp.TotalEarnings.ToString("N0")</strong>
+                                </td>
+                                <td class="text-end">
+                                    <div class="dropdown">
+                                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                                            Actions
+                                        </button>
+                                        <ul class="dropdown-menu dropdown-menu-end">
+                                            <li><a class="dropdown-item" href="#"><i class="bi bi-eye me-2"></i>View Details</a></li>
+                                            <li><a class="dropdown-item" href="#"><i class="bi bi-graph-up me-2"></i>Performance</a></li>
+                                            <li><hr class="dropdown-divider"></li>
+                                            @if (dp.IsActive)
+                                            {
+                                                <li><a class="dropdown-item text-danger" href="#"><i class="bi bi-x-circle me-2"></i>Deactivate</a></li>
+                                            }
+                                            else
+                                            {
+                                                <li><a class="dropdown-item text-success" href="#"><i class="bi bi-check-circle me-2"></i>Activate</a></li>
+                                            }
+                                        </ul>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-people text-muted" style="font-size: 4rem;"></i>
+                <h5 class="text-muted mt-3">No Delivery Partners Yet</h5>
+                <p class="text-muted">Share your referral code to add delivery partners to your network.</p>
+                <button class="btn btn-primary" onclick="copyReferralCode()">
+                    <i class="bi bi-share me-2"></i>Share Referral Code
+                </button>
+            </div>
+        }
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyReferralCode() {
+            var input = document.getElementById('referralCode');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(input.value);
+
+            // Show toast notification
+            var toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.innerHTML = '<div class="toast show bg-success text-white"><div class="toast-body"><i class="bi bi-check-circle me-2"></i>Referral code copied!</div></div>';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        }
+    </script>
+}

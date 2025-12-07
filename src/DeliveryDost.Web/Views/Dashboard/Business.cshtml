@@ -1,0 +1,105 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="page-header">
+    <h1 class="page-title">Dashboard</h1>
+    <p class="page-subtitle">Manage your business deliveries efficiently.</p>
+</div>
+
+<!-- Stats -->
+<div class="row g-4 mb-4">
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>0</h3>
+                <p>Total Deliveries</p>
+            </div>
+            <div class="stat-icon primary">
+                <i class="bi bi-box-seam"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>0</h3>
+                <p>In Progress</p>
+            </div>
+            <div class="stat-icon warning">
+                <i class="bi bi-hourglass-split"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>0</h3>
+                <p>Completed</p>
+            </div>
+            <div class="stat-icon success">
+                <i class="bi bi-check-circle"></i>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="stat-card">
+            <div class="stat-info">
+                <h3>&#8377;0</h3>
+                <p>Wallet Balance</p>
+            </div>
+            <div class="stat-icon primary">
+                <i class="bi bi-wallet2"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Quick Actions -->
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <span>Quick Actions</span>
+            </div>
+            <div class="card-body p-0">
+                <a asp-controller="Delivery" asp-action="Create" class="list-item text-decoration-none">
+                    <i class="bi bi-plus-circle text-primary me-3"></i>
+                    <span>Create Delivery</span>
+                </a>
+                <a asp-controller="Delivery" asp-action="BulkCreate" class="list-item text-decoration-none">
+                    <i class="bi bi-upload text-primary me-3"></i>
+                    <span>Bulk Upload</span>
+                </a>
+                <a asp-controller="Wallet" asp-action="TopUp" class="list-item text-decoration-none">
+                    <i class="bi bi-wallet2 text-primary me-3"></i>
+                    <span>Add Funds</span>
+                </a>
+                <a asp-controller="Subscription" asp-action="Index" class="list-item text-decoration-none">
+                    <i class="bi bi-star text-primary me-3"></i>
+                    <span>Subscription Plans</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Deliveries -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <span>Recent Deliveries</span>
+                <a asp-controller="Delivery" asp-action="Index" class="btn btn-sm btn-outline-primary">View All</a>
+            </div>
+            <div class="card-body p-0">
+                <div class="empty-state">
+                    <i class="bi bi-inbox"></i>
+                    <h5>No deliveries yet</h5>
+                    <p class="mb-3">Start sending packages to your customers</p>
+                    <a asp-controller="Delivery" asp-action="Create" class="btn btn-primary">
+                        <i class="bi bi-plus me-1"></i> Create Delivery
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,347 @@
+@model DeliveryDost.Web.ViewModels.Delivery.ActiveDeliveryViewModel
+@{
+    ViewData["Title"] = "Active Delivery";
+}
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title">
+                <i class="bi bi-truck me-2"></i>Active Delivery
+            </h1>
+            <p class="page-subtitle">
+                Delivery #@Model.Id.ToString().Substring(0, 8).ToUpper()
+            </p>
+        </div>
+        <span class="badge @Model.StatusBadgeClass fs-6 px-3 py-2">
+            @Model.Status.Replace("_", " ")
+        </span>
+    </div>
+</div>
+
+<!-- Progress Steps -->
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="d-flex justify-content-between position-relative">
+            <!-- Progress Line -->
+            <div class="progress-line"></div>
+
+            @foreach (var step in Model.Steps)
+            {
+                <div class="step-item text-center @(step.IsCompleted ? "completed" : "") @(step.IsCurrent ? "current" : "")">
+                    <div class="step-circle">
+                        <i class="bi @step.Icon"></i>
+                    </div>
+                    <small class="d-block mt-2">@step.Title</small>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Left Column: Current Task -->
+    <div class="col-lg-8 mb-4">
+        <!-- Current Step Card -->
+        <div class="card mb-4 border-primary">
+            <div class="card-header bg-primary text-white">
+                <i class="bi bi-geo-alt me-2"></i>
+                @(Model.Status == "ACCEPTED" || Model.Status == "PICKED_UP" ? "Pickup Location" : "Drop Location")
+            </div>
+            <div class="card-body">
+                @if (Model.Status == "ACCEPTED" || Model.Status == "PICKED_UP")
+                {
+                    <h5 class="mb-3">@Model.Pickup.Address</h5>
+                    @if (!string.IsNullOrEmpty(Model.Pickup.ContactName))
+                    {
+                        <p class="mb-1">
+                            <i class="bi bi-person me-2"></i>@Model.Pickup.ContactName
+                        </p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Pickup.ContactPhone))
+                    {
+                        <p class="mb-1">
+                            <i class="bi bi-telephone me-2"></i>
+                            <a href="tel:@Model.Pickup.ContactPhone">@Model.Pickup.ContactPhone</a>
+                        </p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Pickup.Instructions))
+                    {
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Instructions:</strong> @Model.Pickup.Instructions
+                        </div>
+                    }
+                }
+                else
+                {
+                    <h5 class="mb-3">@Model.Drop.Address</h5>
+                    @if (!string.IsNullOrEmpty(Model.Drop.ContactName))
+                    {
+                        <p class="mb-1">
+                            <i class="bi bi-person me-2"></i>@Model.Drop.ContactName
+                        </p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Drop.ContactPhone))
+                    {
+                        <p class="mb-1">
+                            <i class="bi bi-telephone me-2"></i>
+                            <a href="tel:@Model.Drop.ContactPhone">@Model.Drop.ContactPhone</a>
+                        </p>
+                    }
+                    @if (!string.IsNullOrEmpty(Model.Drop.Instructions))
+                    {
+                        <div class="alert alert-info mt-3 mb-0">
+                            <i class="bi bi-info-circle me-1"></i>
+                            <strong>Instructions:</strong> @Model.Drop.Instructions
+                        </div>
+                    }
+                }
+            </div>
+            <div class="card-footer">
+                <a href="@Model.GoogleMapsUrl" target="_blank" class="btn btn-outline-primary w-100">
+                    <i class="bi bi-map me-2"></i>Navigate in Google Maps
+                </a>
+            </div>
+        </div>
+
+        <!-- Map -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-map me-2"></i>Route Map
+            </div>
+            <div class="card-body p-0">
+                <div id="routeMap" style="height: 300px;"></div>
+            </div>
+        </div>
+
+        <!-- Package Details -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-box me-2"></i>Package Details
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-4 text-center">
+                        <small class="text-muted d-block">Type</small>
+                        <strong>@Model.Package.TypeDisplay</strong>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted d-block">Weight</small>
+                        <strong>@Model.Package.WeightKg kg</strong>
+                    </div>
+                    <div class="col-4 text-center">
+                        <small class="text-muted d-block">Earning</small>
+                        <strong class="text-success">₹@Model.EstimatedEarning?.ToString("N0")</strong>
+                    </div>
+                </div>
+                @if (!string.IsNullOrEmpty(Model.Package.Description))
+                {
+                    <p class="mt-3 mb-0 text-muted small">
+                        <i class="bi bi-info-circle me-1"></i>@Model.Package.Description
+                    </p>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Actions -->
+    <div class="col-lg-4 mb-4">
+        <!-- Current Step Info -->
+        <div class="card mb-4 border-info">
+            <div class="card-header bg-info text-white">
+                <i class="bi bi-arrow-right-circle me-2"></i>Next Step
+            </div>
+            <div class="card-body text-center">
+                <h5 class="mb-3">@Model.CurrentStep</h5>
+
+                @if (Model.Status == "DELIVERED")
+                {
+                    <div class="alert alert-success mb-0">
+                        <i class="bi bi-check-circle me-1"></i>
+                        Delivery Completed!
+                    </div>
+                }
+                else if (Model.Status == "IN_TRANSIT")
+                {
+                    <a asp-action="Pod" asp-route-id="@Model.Id" class="btn btn-success btn-lg w-100">
+                        <i class="bi bi-camera me-2"></i>@Model.NextActionButton
+                    </a>
+                }
+                else
+                {
+                    <form asp-action="UpdateStatus" method="post">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model.Id" />
+                        <input type="hidden" name="newStatus" value="@(Model.Status == "ACCEPTED" ? "PICKED_UP" : "IN_TRANSIT")" />
+                        <button type="submit" class="btn btn-primary btn-lg w-100">
+                            <i class="bi @(Model.Status == "ACCEPTED" ? "bi-box-arrow-up" : "bi-truck") me-2"></i>
+                            @Model.NextActionButton
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <i class="bi bi-lightning me-2"></i>Quick Actions
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    @if (Model.Status == "ACCEPTED" && !string.IsNullOrEmpty(Model.Pickup.ContactPhone))
+                    {
+                        <a href="tel:@Model.Pickup.ContactPhone" class="btn btn-outline-primary">
+                            <i class="bi bi-telephone me-1"></i>Call Sender
+                        </a>
+                    }
+                    @if (Model.Status != "ACCEPTED" && !string.IsNullOrEmpty(Model.Drop.ContactPhone))
+                    {
+                        <a href="tel:@Model.Drop.ContactPhone" class="btn btn-outline-primary">
+                            <i class="bi bi-telephone me-1"></i>Call Recipient
+                        </a>
+                    }
+                    <a asp-action="Details" asp-route-id="@Model.Id" class="btn btn-outline-secondary">
+                        <i class="bi bi-info-circle me-1"></i>Full Details
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Help Card -->
+        <div class="card">
+            <div class="card-header">
+                <i class="bi bi-question-circle me-2"></i>Need Help?
+            </div>
+            <div class="card-body">
+                <p class="small text-muted mb-3">
+                    If you're facing any issues with this delivery, contact support.
+                </p>
+                <a href="#" class="btn btn-outline-danger btn-sm w-100">
+                    <i class="bi bi-headset me-1"></i>Contact Support
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #routeMap { z-index: 1; }
+
+        .progress-line {
+            position: absolute;
+            top: 20px;
+            left: 10%;
+            right: 10%;
+            height: 4px;
+            background: #dee2e6;
+            z-index: 0;
+        }
+
+        .step-item {
+            position: relative;
+            z-index: 1;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: #dee2e6;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            font-size: 18px;
+            color: #6c757d;
+        }
+
+        .step-item.completed .step-circle {
+            background: #198754;
+            color: white;
+        }
+
+        .step-item.current .step-circle {
+            background: #0d6efd;
+            color: white;
+            box-shadow: 0 0 0 4px rgba(13, 110, 253, 0.25);
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var pickupLat = @Model.Pickup.Lat;
+            var pickupLng = @Model.Pickup.Lng;
+            var dropLat = @Model.Drop.Lat;
+            var dropLng = @Model.Drop.Lng;
+            var currentStatus = '@Model.Status';
+
+            var map = L.map('routeMap');
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap'
+            }).addTo(map);
+
+            // Pickup marker (green)
+            var pickupIcon = L.divIcon({
+                html: '<i class="bi bi-geo-alt-fill text-success" style="font-size: 28px;"></i>',
+                className: 'custom-marker',
+                iconSize: [28, 28],
+                iconAnchor: [14, 28]
+            });
+
+            // Drop marker (red)
+            var dropIcon = L.divIcon({
+                html: '<i class="bi bi-geo-alt-fill text-danger" style="font-size: 28px;"></i>',
+                className: 'custom-marker',
+                iconSize: [28, 28],
+                iconAnchor: [14, 28]
+            });
+
+            // Current position marker (blue)
+            var currentIcon = L.divIcon({
+                html: '<i class="bi bi-circle-fill text-primary" style="font-size: 16px;"></i>',
+                className: 'custom-marker',
+                iconSize: [16, 16],
+                iconAnchor: [8, 8]
+            });
+
+            var pickupMarker = L.marker([pickupLat, pickupLng], { icon: pickupIcon }).addTo(map);
+            pickupMarker.bindPopup('<strong>Pickup</strong><br>@Model.Pickup.Address.Replace("'", "\\'")');
+
+            var dropMarker = L.marker([dropLat, dropLng], { icon: dropIcon }).addTo(map);
+            dropMarker.bindPopup('<strong>Drop</strong><br>@Model.Drop.Address.Replace("'", "\\'")');
+
+            // Route line
+            L.polyline([[pickupLat, pickupLng], [dropLat, dropLng]], {
+                color: '#0d6efd',
+                weight: 3,
+                dashArray: '10, 10'
+            }).addTo(map);
+
+            // Current position (simulated based on status)
+            var progress = currentStatus === 'ACCEPTED' ? 0.1 :
+                          currentStatus === 'PICKED_UP' ? 0.3 :
+                          currentStatus === 'IN_TRANSIT' ? 0.7 : 1.0;
+
+            var currentLat = pickupLat + (dropLat - pickupLat) * progress;
+            var currentLng = pickupLng + (dropLng - pickupLng) * progress;
+
+            if (currentStatus !== 'DELIVERED') {
+                var currentMarker = L.marker([currentLat, currentLng], { icon: currentIcon }).addTo(map);
+                currentMarker.bindPopup('<strong>Your Location</strong>');
+            }
+
+            // Fit bounds
+            var bounds = L.latLngBounds([[pickupLat, pickupLng], [dropLat, dropLng]]);
+            map.fitBounds(bounds, { padding: [30, 30] });
+        });
+    </script>
+}

@@ -1,0 +1,56 @@
+@model DeliveryDost.Web.ViewModels.Dashboard.AdminDashboardViewModel
+@{ ViewData["Title"] = "Admin Dashboard"; }
+
+<div class="page-header">
+    <h1 class="page-title"><i class="bi bi-speedometer2 me-2"></i>Admin Dashboard</h1>
+    <p class="page-subtitle">Platform overview and analytics</p>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-3 mb-3"><div class="card bg-primary text-white"><div class="card-body"><small class="text-white-50">Total Users</small><h3>@Model.TotalUsers.ToString("N0")</h3></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card bg-success text-white"><div class="card-body"><small class="text-white-50">Total Deliveries</small><h3>@Model.TotalDeliveries.ToString("N0")</h3></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card bg-info text-white"><div class="card-body"><small class="text-white-50">Total Revenue</small><h3>₹@(Model.TotalRevenue / 100000)L</h3></div></div></div>
+    <div class="col-md-3 mb-3"><div class="card bg-warning"><div class="card-body"><small>Avg Delivery Time</small><h3>@Model.AvgDeliveryTime min</h3></div></div></div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-2 mb-2"><div class="card"><div class="card-body text-center py-2"><h4 class="mb-0">@Model.TodayDeliveries</h4><small class="text-muted">Today</small></div></div></div>
+    <div class="col-md-2 mb-2"><div class="card"><div class="card-body text-center py-2"><h4 class="mb-0">@Model.ActiveDeliveries</h4><small class="text-muted">Active</small></div></div></div>
+    <div class="col-md-2 mb-2"><div class="card"><div class="card-body text-center py-2"><h4 class="mb-0">@Model.TotalDPs</h4><small class="text-muted">DPs</small></div></div></div>
+    <div class="col-md-2 mb-2"><div class="card"><div class="card-body text-center py-2"><h4 class="mb-0">@Model.TotalDPCMs</h4><small class="text-muted">DPCMs</small></div></div></div>
+    <div class="col-md-2 mb-2"><div class="card border-danger"><div class="card-body text-center py-2"><h4 class="mb-0 text-danger">@Model.OpenComplaints</h4><small class="text-muted">Complaints</small></div></div></div>
+    <div class="col-md-2 mb-2"><div class="card border-warning"><div class="card-body text-center py-2"><h4 class="mb-0 text-warning">@Model.PendingKyc</h4><small class="text-muted">KYC</small></div></div></div>
+</div>
+
+<div class="row">
+    <div class="col-lg-6 mb-4"><div class="card h-100"><div class="card-header"><i class="bi bi-bar-chart me-2"></i>Deliveries (Last 7 Days)</div><div class="card-body"><canvas id="deliveriesChart" height="200"></canvas></div></div></div>
+    <div class="col-lg-6 mb-4"><div class="card h-100"><div class="card-header"><i class="bi bi-currency-rupee me-2"></i>Revenue Trend</div><div class="card-body"><canvas id="revenueChart" height="200"></canvas></div></div></div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4"><div class="card h-100"><div class="card-header"><i class="bi bi-pie-chart me-2"></i>Users by Role</div><div class="card-body"><canvas id="usersChart"></canvas></div></div></div>
+    <div class="col-lg-8 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between"><span><i class="bi bi-lightning me-2"></i>Quick Actions</span><a asp-controller="Dashboard" asp-action="ExportCsv" asp-route-type="users" class="btn btn-sm btn-outline-primary"><i class="bi bi-download"></i> Export</a></div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2"><a asp-controller="Admin" asp-action="Users" class="btn btn-outline-primary w-100"><i class="bi bi-people me-1"></i>Users</a></div>
+                    <div class="col-md-4 mb-2"><a asp-controller="Admin" asp-action="KycRequests" class="btn btn-outline-warning w-100"><i class="bi bi-file-check me-1"></i>KYC</a></div>
+                    <div class="col-md-4 mb-2"><a asp-controller="Admin" asp-action="Complaints" class="btn btn-outline-danger w-100"><i class="bi bi-exclamation-circle me-1"></i>Complaints</a></div>
+                    <div class="col-md-4 mb-2"><a asp-controller="Complaint" asp-action="InspectorDashboard" class="btn btn-outline-info w-100"><i class="bi bi-shield-check me-1"></i>Inspector</a></div>
+                    <div class="col-md-4 mb-2"><a asp-controller="Wallet" asp-action="Settlements" class="btn btn-outline-success w-100"><i class="bi bi-bank me-1"></i>Settlements</a></div>
+                    <div class="col-md-4 mb-2"><a href="#" class="btn btn-outline-secondary w-100"><i class="bi bi-gear me-1"></i>Settings</a></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        new Chart(document.getElementById('deliveriesChart'), { type: 'bar', data: { labels: [@Html.Raw(string.Join(",", Model.DeliveriesByDay.Select(e => $"'{e.Label}'")))], datasets: [{ label: 'Deliveries', data: [@string.Join(",", Model.DeliveriesByDay.Select(e => e.Value))], backgroundColor: '#0d6efd' }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+        new Chart(document.getElementById('revenueChart'), { type: 'line', data: { labels: [@Html.Raw(string.Join(",", Model.RevenueByMonth.Select(e => $"'{e.Label}'")))], datasets: [{ label: 'Revenue', data: [@string.Join(",", Model.RevenueByMonth.Select(e => e.Value))], borderColor: '#198754', tension: 0.3 }] }, options: { responsive: true } });
+        new Chart(document.getElementById('usersChart'), { type: 'doughnut', data: { labels: [@Html.Raw(string.Join(",", Model.UsersByRole.Keys.Select(k => $"'{k}'")))], datasets: [{ data: [@string.Join(",", Model.UsersByRole.Values)], backgroundColor: ['#0d6efd', '#198754', '#ffc107', '#dc3545', '#0dcaf0'] }] } });
+    </script>
+}
