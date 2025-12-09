@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DeliverX.Application.DTOs.Auth;
-using DeliverX.Application.Services;
+using DeliveryDost.Application.DTOs.Auth;
+using DeliveryDost.Application.Services;
 using DeliveryDost.Web.ViewModels.Account;
-using DeliverX.Domain.Entities;
+using DeliveryDost.Domain.Entities;
 
 namespace DeliveryDost.Web.Controllers;
 
@@ -254,6 +254,8 @@ public class AccountController : Controller
     {
         "DP" => "Dp",
         "DPCM" => "Dpcm",
-        _ => null  // EC, BC, DBC, SuperAdmin go directly to dashboard
+        "BC" => "Bc",  // Business Consumer registration with subscription
+        "DBC" => "Bc", // Digital Business Consumer also uses BC registration
+        _ => null  // EC, SuperAdmin go directly to dashboard
     };
 }

@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DeliverX.Application.DTOs.Registration;
-using DeliverX.Application.Services;
-using DeliverX.Infrastructure.Services;
+using DeliveryDost.Application.DTOs.Registration;
+using DeliveryDost.Application.Services;
+using DeliveryDost.Infrastructure.Services;
 using DeliveryDost.Web.ViewModels.Dp;
 
 namespace DeliveryDost.Web.Controllers;
@@ -109,14 +109,20 @@ public class DpController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveVehicleInfo(DpRegistrationViewModel model)
     {
-        LoadFromSession(model);
-
+        // First validate the submitted vehicle info BEFORE loading session
         ModelState.Clear();
         if (!TryValidateModel(model.VehicleInfo, nameof(model.VehicleInfo)))
         {
+            // Load other step data from session for display
+            LoadFromSession(model);
             model.CurrentStep = 2;
             return View("Register", model);
         }
+
+        // Load previous steps data from session
+        var submittedVehicleInfo = model.VehicleInfo;
+        LoadFromSession(model);
+        model.VehicleInfo = submittedVehicleInfo;
 
         // Save to session
         SaveToSession(model);
@@ -133,14 +139,20 @@ public class DpController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveBankDetails(DpRegistrationViewModel model)
     {
-        LoadFromSession(model);
-
+        // First validate the submitted bank details BEFORE loading session
         ModelState.Clear();
         if (!TryValidateModel(model.BankDetails, nameof(model.BankDetails)))
         {
+            // Load other step data from session for display
+            LoadFromSession(model);
             model.CurrentStep = 3;
             return View("Register", model);
         }
+
+        // Load previous steps data from session (personal info, vehicle info)
+        var submittedBankDetails = model.BankDetails; // Save submitted values
+        LoadFromSession(model);
+        model.BankDetails = submittedBankDetails; // Restore submitted bank details
 
         var userId = GetUserId();
 
@@ -185,14 +197,20 @@ public class DpController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SaveKycDocuments(DpRegistrationViewModel model)
     {
-        LoadFromSession(model);
-
+        // First validate the submitted KYC documents BEFORE loading session
         ModelState.Clear();
         if (!TryValidateModel(model.KycDocuments, nameof(model.KycDocuments)))
         {
+            // Load other step data from session for display
+            LoadFromSession(model);
             model.CurrentStep = 4;
             return View("Register", model);
         }
+
+        // Load previous steps data from session
+        var submittedKycDocuments = model.KycDocuments;
+        LoadFromSession(model);
+        model.KycDocuments = submittedKycDocuments;
 
         var userId = GetUserId();
 
@@ -261,14 +279,20 @@ public class DpController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CompleteRegistration(DpRegistrationViewModel model)
     {
-        LoadFromSession(model);
-
+        // First validate the submitted service area BEFORE loading session
         ModelState.Clear();
         if (!TryValidateModel(model.ServiceArea, nameof(model.ServiceArea)))
         {
+            // Load other step data from session for display
+            LoadFromSession(model);
             model.CurrentStep = 5;
             return View("Register", model);
         }
+
+        // Load previous steps data from session
+        var submittedServiceArea = model.ServiceArea;
+        LoadFromSession(model);
+        model.ServiceArea = submittedServiceArea;
 
         var userId = GetUserId();
 
@@ -472,7 +496,10 @@ public class DpController : Controller
         // Bank Details
         HttpContext.Session.SetString($"{SessionKey}_AccountHolderName", model.BankDetails.AccountHolderName ?? "");
         HttpContext.Session.SetString($"{SessionKey}_AccountNumber", model.BankDetails.AccountNumber ?? "");
+        HttpContext.Session.SetString($"{SessionKey}_ConfirmAccountNumber", model.BankDetails.ConfirmAccountNumber ?? "");
         HttpContext.Session.SetString($"{SessionKey}_IFSCCode", model.BankDetails.IFSCCode ?? "");
+        HttpContext.Session.SetString($"{SessionKey}_BankName", model.BankDetails.BankName ?? "");
+        HttpContext.Session.SetString($"{SessionKey}_BranchName", model.BankDetails.BranchName ?? "");
 
         // KYC
         HttpContext.Session.SetString($"{SessionKey}_PAN", model.KycDocuments.PAN ?? "");
@@ -490,31 +517,41 @@ public class DpController : Controller
 
     private void LoadFromSession(DpRegistrationViewModel model)
     {
+        // Helper to get session value only if not empty
+        string GetSessionOrKeep(string key, string currentValue)
+        {
+            var sessionValue = HttpContext.Session.GetString($"{SessionKey}_{key}");
+            return !string.IsNullOrEmpty(sessionValue) ? sessionValue : currentValue;
+        }
+
         // Personal Info
-        model.PersonalInfo.FullName = HttpContext.Session.GetString($"{SessionKey}_FullName") ?? model.PersonalInfo.FullName;
-        model.PersonalInfo.Email = HttpContext.Session.GetString($"{SessionKey}_Email") ?? model.PersonalInfo.Email;
+        model.PersonalInfo.FullName = GetSessionOrKeep("FullName", model.PersonalInfo.FullName);
+        model.PersonalInfo.Email = GetSessionOrKeep("Email", model.PersonalInfo.Email);
         var dobStr = HttpContext.Session.GetString($"{SessionKey}_DOB");
         if (!string.IsNullOrEmpty(dobStr) && DateTime.TryParse(dobStr, out var dob))
             model.PersonalInfo.DOB = dob;
-        model.PersonalInfo.Gender = HttpContext.Session.GetString($"{SessionKey}_Gender") ?? model.PersonalInfo.Gender;
-        model.PersonalInfo.AddressLine1 = HttpContext.Session.GetString($"{SessionKey}_AddressLine1") ?? model.PersonalInfo.AddressLine1;
-        model.PersonalInfo.AddressLine2 = HttpContext.Session.GetString($"{SessionKey}_AddressLine2") ?? model.PersonalInfo.AddressLine2;
-        model.PersonalInfo.City = HttpContext.Session.GetString($"{SessionKey}_City") ?? model.PersonalInfo.City;
-        model.PersonalInfo.State = HttpContext.Session.GetString($"{SessionKey}_State") ?? model.PersonalInfo.State;
-        model.PersonalInfo.Pincode = HttpContext.Session.GetString($"{SessionKey}_Pincode") ?? model.PersonalInfo.Pincode;
+        model.PersonalInfo.Gender = GetSessionOrKeep("Gender", model.PersonalInfo.Gender);
+        model.PersonalInfo.AddressLine1 = GetSessionOrKeep("AddressLine1", model.PersonalInfo.AddressLine1);
+        model.PersonalInfo.AddressLine2 = GetSessionOrKeep("AddressLine2", model.PersonalInfo.AddressLine2);
+        model.PersonalInfo.City = GetSessionOrKeep("City", model.PersonalInfo.City);
+        model.PersonalInfo.State = GetSessionOrKeep("State", model.PersonalInfo.State);
+        model.PersonalInfo.Pincode = GetSessionOrKeep("Pincode", model.PersonalInfo.Pincode);
 
         // Vehicle Info
-        model.VehicleInfo.VehicleType = HttpContext.Session.GetString($"{SessionKey}_VehicleType") ?? model.VehicleInfo.VehicleType;
-        model.VehicleInfo.VehicleNumber = HttpContext.Session.GetString($"{SessionKey}_VehicleNumber") ?? model.VehicleInfo.VehicleNumber;
+        model.VehicleInfo.VehicleType = GetSessionOrKeep("VehicleType", model.VehicleInfo.VehicleType);
+        model.VehicleInfo.VehicleNumber = GetSessionOrKeep("VehicleNumber", model.VehicleInfo.VehicleNumber);
 
         // Bank Details
-        model.BankDetails.AccountHolderName = HttpContext.Session.GetString($"{SessionKey}_AccountHolderName") ?? model.BankDetails.AccountHolderName;
-        model.BankDetails.AccountNumber = HttpContext.Session.GetString($"{SessionKey}_AccountNumber") ?? model.BankDetails.AccountNumber;
-        model.BankDetails.IFSCCode = HttpContext.Session.GetString($"{SessionKey}_IFSCCode") ?? model.BankDetails.IFSCCode;
+        model.BankDetails.AccountHolderName = GetSessionOrKeep("AccountHolderName", model.BankDetails.AccountHolderName);
+        model.BankDetails.AccountNumber = GetSessionOrKeep("AccountNumber", model.BankDetails.AccountNumber);
+        model.BankDetails.ConfirmAccountNumber = GetSessionOrKeep("ConfirmAccountNumber", model.BankDetails.ConfirmAccountNumber);
+        model.BankDetails.IFSCCode = GetSessionOrKeep("IFSCCode", model.BankDetails.IFSCCode);
+        model.BankDetails.BankName = GetSessionOrKeep("BankName", model.BankDetails.BankName);
+        model.BankDetails.BranchName = GetSessionOrKeep("BranchName", model.BankDetails.BranchName);
 
         // KYC
-        model.KycDocuments.PAN = HttpContext.Session.GetString($"{SessionKey}_PAN") ?? model.KycDocuments.PAN;
-        model.KycDocuments.AadhaarMethod = HttpContext.Session.GetString($"{SessionKey}_AadhaarMethod") ?? model.KycDocuments.AadhaarMethod;
+        model.KycDocuments.PAN = GetSessionOrKeep("PAN", model.KycDocuments.PAN);
+        model.KycDocuments.AadhaarMethod = GetSessionOrKeep("AadhaarMethod", model.KycDocuments.AadhaarMethod);
 
         // Service Area
         if (decimal.TryParse(HttpContext.Session.GetString($"{SessionKey}_CenterLat"), out var lat))
@@ -529,7 +566,7 @@ public class DpController : Controller
             model.ServiceArea.PerKgRate = perKg;
         if (decimal.TryParse(HttpContext.Session.GetString($"{SessionKey}_MinCharge"), out var minCharge))
             model.ServiceArea.MinCharge = minCharge;
-        model.ServiceArea.Availability = HttpContext.Session.GetString($"{SessionKey}_Availability") ?? model.ServiceArea.Availability;
+        model.ServiceArea.Availability = GetSessionOrKeep("Availability", model.ServiceArea.Availability);
     }
 
     private void ClearSession()
@@ -539,7 +576,7 @@ public class DpController : Controller
             "Step", "FullName", "Email", "DOB", "Gender",
             "AddressLine1", "AddressLine2", "City", "State", "Pincode",
             "VehicleType", "VehicleNumber",
-            "AccountHolderName", "AccountNumber", "IFSCCode",
+            "AccountHolderName", "AccountNumber", "ConfirmAccountNumber", "IFSCCode", "BankName", "BranchName",
             "PAN", "AadhaarMethod",
             "CenterLat", "CenterLng", "RadiusKm", "PerKmRate", "PerKgRate", "MinCharge", "Availability"
         };

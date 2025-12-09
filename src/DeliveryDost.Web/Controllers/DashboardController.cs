@@ -1,9 +1,9 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DeliverX.Application.Services;
-using DeliverX.Application.DTOs.Delivery;
-using DeliverX.Application.DTOs.Wallet;
+using DeliveryDost.Application.Services;
+using DeliveryDost.Application.DTOs.Delivery;
+using DeliveryDost.Application.DTOs.Wallet;
 using DeliveryDost.Web.ViewModels.Dashboard;
 
 namespace DeliveryDost.Web.Controllers;
@@ -73,10 +73,18 @@ public class DashboardController : Controller
                     Id = d.Id, Status = d.Status, DropAddress = d.DropAddress,
                     Price = d.EstimatedPrice, CreatedAt = d.CreatedAt
                 }).ToList(),
-                WeeklyEarnings = Enumerable.Range(0, 7).Select(i => new ChartDataPoint
+                // Calculate weekly earnings from recent deliveries data
+                WeeklyEarnings = Enumerable.Range(0, 7).Select(i =>
                 {
-                    Label = DateTime.Today.AddDays(-6 + i).ToString("ddd"),
-                    Value = new Random().Next(100, 500)
+                    var date = DateTime.Today.AddDays(-6 + i);
+                    var dayEarnings = deliveries.Deliveries
+                        .Where(d => d.CreatedAt.Date == date && d.Status == "DELIVERED")
+                        .Sum(d => d.EstimatedPrice ?? 0);
+                    return new ChartDataPoint
+                    {
+                        Label = date.ToString("ddd"),
+                        Value = (int)dayEarnings
+                    };
                 }).ToList()
             };
 
@@ -93,20 +101,34 @@ public class DashboardController : Controller
     [Authorize(Roles = "DPCM")]
     public async Task<IActionResult> Dpcm()
     {
+        var userId = GetUserId();
         try
         {
+            // Fetch actual data from database service
+            var dashboardData = await _dashboardService.GetDPCMDashboardAsync(userId, CancellationToken.None);
+
             var model = new DpcmDashboardViewModel
             {
-                TotalDPs = 25, ActiveDPs = 18, PendingKyc = 3,
-                TotalRevenue = 125000, MonthRevenue = 35000,
-                TotalDeliveries = 1500, MonthDeliveries = 420, AvgRating = 4.3m,
-                TopPerformers = Enumerable.Range(1, 5).Select(i => new DpSummaryItem
+                TotalDPs = dashboardData.Stats.TotalManagedDPs,
+                ActiveDPs = dashboardData.Stats.ActiveDPs,
+                PendingKyc = dashboardData.Stats.PendingOnboarding,
+                TotalRevenue = dashboardData.Earnings.TotalEarnings,
+                MonthRevenue = dashboardData.Earnings.EarningsThisMonth,
+                TotalDeliveries = dashboardData.Stats.TotalDeliveries,
+                MonthDeliveries = dashboardData.Stats.DeliveriesToday, // Using today's deliveries as monthly placeholder
+                AvgRating = dashboardData.Stats.AvgDPRating,
+                TopPerformers = dashboardData.ManagedDPs.Take(5).Select(dp => new DpSummaryItem
                 {
-                    Name = $"DP Partner {i}", Deliveries = 50 - i * 5, Rating = 4.5m - i * 0.1m, Earnings = 5000 - i * 500
+                    Name = dp.Name,
+                    Deliveries = dp.TotalDeliveries,
+                    Rating = dp.Rating,
+                    Earnings = 0 // DPSummaryDto doesn't have Earnings, using placeholder
                 }).ToList(),
+                // Generate monthly chart data showing zeros - service doesn't provide monthly breakdown
                 MonthlyDeliveries = Enumerable.Range(1, 6).Select(i => new ChartDataPoint
                 {
-                    Label = DateTime.Today.AddMonths(-5 + i).ToString("MMM"), Value = 300 + i * 50
+                    Label = DateTime.Today.AddMonths(-5 + i).ToString("MMM"),
+                    Value = i == 6 ? dashboardData.Stats.TotalDeliveries : 0 // Show current total in latest month
                 }).ToList()
             };
 
@@ -115,8 +137,16 @@ public class DashboardController : Controller
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error loading DPCM dashboard");
-            return View(new DpcmDashboardViewModel());
+            _logger.LogError(ex, "Error loading DPCM dashboard for user {UserId}", userId);
+            return View(new DpcmDashboardViewModel
+            {
+                TopPerformers = new List<DpSummaryItem>(),
+                MonthlyDeliveries = Enumerable.Range(1, 6).Select(i => new ChartDataPoint
+                {
+                    Label = DateTime.Today.AddMonths(-5 + i).ToString("MMM"),
+                    Value = 0
+                }).ToList()
+            });
         }
     }
 

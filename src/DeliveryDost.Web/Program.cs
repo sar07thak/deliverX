@@ -4,10 +4,10 @@ using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using FluentValidation;
-using DeliverX.Application.Configuration;
-using DeliverX.Application.Services;
-using DeliverX.Infrastructure.Data;
-using DeliverX.Infrastructure.Services;
+using DeliveryDost.Application.Configuration;
+using DeliveryDost.Application.Services;
+using DeliveryDost.Infrastructure.Data;
+using DeliveryDost.Infrastructure.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -20,10 +20,11 @@ builder.Services.AddControllersWithViews()
 builder.Services.AddEndpointsApiExplorer();
 
 // ===========================================
-// Database Configuration (SQLite)
+// Database Configuration (SQL Server)
 // ===========================================
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlite("Data Source=deliverydost.db")
+    options.UseSqlServer(connectionString)
 );
 
 // ===========================================
@@ -135,27 +136,38 @@ builder.Services.AddScoped<IReferralService, ReferralService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
 
 // ===========================================
+// Master Data & Reports Services
+// ===========================================
+builder.Services.AddScoped<IPincodeService, PincodeService>();
+builder.Services.AddScoped<ISuperAdminReportService, SuperAdminReportService>();
+
+// ===========================================
+// DPCM Management Services
+// ===========================================
+builder.Services.AddScoped<IDPCMManagementService, DPCMManagementService>();
+
+// ===========================================
 // External API Clients (Mock for MVP)
 // ===========================================
-builder.Services.AddScoped<DeliverX.Infrastructure.Services.External.IDigiLockerClient,
-    DeliverX.Infrastructure.Services.External.MockDigiLockerClient>();
-builder.Services.AddScoped<DeliverX.Infrastructure.Services.External.INSDLPANClient,
-    DeliverX.Infrastructure.Services.External.MockNSDLPANClient>();
-builder.Services.AddScoped<DeliverX.Infrastructure.Services.External.IBankVerificationClient,
-    DeliverX.Infrastructure.Services.External.MockBankVerificationClient>();
+builder.Services.AddScoped<DeliveryDost.Infrastructure.Services.External.IDigiLockerClient,
+    DeliveryDost.Infrastructure.Services.External.MockDigiLockerClient>();
+builder.Services.AddScoped<DeliveryDost.Infrastructure.Services.External.INSDLPANClient,
+    DeliveryDost.Infrastructure.Services.External.MockNSDLPANClient>();
+builder.Services.AddScoped<DeliveryDost.Infrastructure.Services.External.IBankVerificationClient,
+    DeliveryDost.Infrastructure.Services.External.MockBankVerificationClient>();
 
 // ===========================================
 // Utilities
 // ===========================================
-builder.Services.AddScoped<DeliverX.Infrastructure.Utilities.IEncryptionHelper,
-    DeliverX.Infrastructure.Utilities.EncryptionHelper>();
-builder.Services.AddScoped<DeliverX.Infrastructure.Utilities.INameMatchHelper,
-    DeliverX.Infrastructure.Utilities.NameMatchHelper>();
+builder.Services.AddScoped<DeliveryDost.Infrastructure.Utilities.IEncryptionHelper,
+    DeliveryDost.Infrastructure.Utilities.EncryptionHelper>();
+builder.Services.AddScoped<DeliveryDost.Infrastructure.Utilities.INameMatchHelper,
+    DeliveryDost.Infrastructure.Utilities.NameMatchHelper>();
 
 // ===========================================
 // Validation
 // ===========================================
-builder.Services.AddValidatorsFromAssemblyContaining<DeliverX.Application.Validators.LoginRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<DeliveryDost.Application.Validators.LoginRequestValidator>();
 
 // ===========================================
 // CORS (for API consumers)

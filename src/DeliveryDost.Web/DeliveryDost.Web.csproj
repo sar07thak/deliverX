@@ -1,9 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
-    <ProjectReference Include="..\DeliverX.Domain\DeliverX.Domain.csproj" />
-    <ProjectReference Include="..\DeliverX.Application\DeliverX.Application.csproj" />
-    <ProjectReference Include="..\DeliverX.Infrastructure\DeliverX.Infrastructure.csproj" />
+    <ProjectReference Include="..\DeliveryDost.Domain\DeliveryDost.Domain.csproj" />
+    <ProjectReference Include="..\DeliveryDost.Application\DeliveryDost.Application.csproj" />
+    <ProjectReference Include="..\DeliveryDost.Infrastructure\DeliveryDost.Infrastructure.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -13,7 +13,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.0" />
   </ItemGroup>
 
   <PropertyGroup>

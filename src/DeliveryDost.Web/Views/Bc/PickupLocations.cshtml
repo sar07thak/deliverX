@@ -1,0 +1,90 @@
+@model List<DeliveryDost.Domain.Entities.BCPickupLocation>
+@{
+    ViewData["Title"] = "Pickup Locations";
+}
+
+<div class="page-header d-flex justify-content-between align-items-center">
+    <div>
+        <h1 class="page-title">Pickup Locations</h1>
+        <p class="page-subtitle">Manage your business pickup points</p>
+    </div>
+    <a asp-action="AddPickupLocation" class="btn btn-primary">
+        <i class="bi bi-plus-circle me-1"></i> Add Location
+    </a>
+</div>
+
+@if (Model.Any())
+{
+    <div class="row">
+        @foreach (var location in Model)
+        {
+            <div class="col-md-6 mb-4">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div>
+                                <h5 class="card-title">
+                                    @location.LocationName
+                                    @if (location.IsDefault)
+                                    {
+                                        <span class="badge bg-primary ms-2">Default</span>
+                                    }
+                                </h5>
+                            </div>
+                            <span class="badge @(location.IsActive ? "bg-success" : "bg-secondary")">
+                                @(location.IsActive ? "Active" : "Inactive")
+                            </span>
+                        </div>
+
+                        <p class="card-text text-muted mb-2">
+                            <i class="bi bi-geo-alt me-1"></i>
+                            @location.AddressLine1@(!string.IsNullOrEmpty(location.AddressLine2) ? ", " + location.AddressLine2 : "")
+                            <br />
+                            @location.City, @location.State - @location.Pincode
+                        </p>
+
+                        @if (!string.IsNullOrEmpty(location.ContactName) || !string.IsNullOrEmpty(location.ContactPhone))
+                        {
+                            <p class="card-text mb-0">
+                                <i class="bi bi-person me-1"></i>
+                                @location.ContactName
+                                @if (!string.IsNullOrEmpty(location.ContactPhone))
+                                {
+                                    <span class="ms-2">
+                                        <i class="bi bi-telephone me-1"></i>@location.ContactPhone
+                                    </span>
+                                }
+                            </p>
+                        }
+                    </div>
+                    <div class="card-footer bg-transparent">
+                        <div class="btn-group btn-group-sm">
+                            <button type="button" class="btn btn-outline-secondary">
+                                <i class="bi bi-pencil me-1"></i> Edit
+                            </button>
+                            @if (!location.IsDefault)
+                            {
+                                <button type="button" class="btn btn-outline-primary">
+                                    <i class="bi bi-star me-1"></i> Set as Default
+                                </button>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-geo-alt" style="font-size: 3rem; color: #ccc;"></i>
+            <h5 class="mt-3">No Pickup Locations</h5>
+            <p class="text-muted">Add your first pickup location to start creating deliveries.</p>
+            <a asp-action="AddPickupLocation" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i> Add Pickup Location
+            </a>
+        </div>
+    </div>
+}

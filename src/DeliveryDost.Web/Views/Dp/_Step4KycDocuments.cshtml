@@ -114,10 +114,10 @@
     </div>
 
     <div class="btn-group-nav">
-        <button type="submit" asp-action="GoToStep" asp-route-step="3" class="btn btn-outline-secondary">
+        <button type="submit" formaction="@Url.Action("GoToStep", new { step = 3 })" formnovalidate class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Back
         </button>
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" formaction="@Url.Action("SaveKycDocuments")" class="btn btn-primary">
             Next <i class="bi bi-arrow-right ms-1"></i>
         </button>
     </div>

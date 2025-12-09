@@ -1,9 +1,13 @@
 using System.Security.Claims;
+using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DeliverX.Application.DTOs.Registration;
-using DeliverX.Application.Services;
-using DeliverX.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+using DeliveryDost.Application.DTOs.Registration;
+using DeliveryDost.Application.Services;
+using DeliveryDost.Domain.Entities;
+using DeliveryDost.Infrastructure.Data;
+using DeliveryDost.Infrastructure.Services;
 using DeliveryDost.Web.ViewModels.Dpcm;
 
 namespace DeliveryDost.Web.Controllers;
@@ -11,7 +15,7 @@ namespace DeliveryDost.Web.Controllers;
 [Authorize(Roles = "DPCM")]
 public class DpcmController : Controller
 {
-    private readonly IDPRegistrationService _registrationService;
+    private readonly ApplicationDbContext _context;
     private readonly IPANVerificationService _panService;
     private readonly IBankVerificationService _bankService;
     private readonly IDuplicateDetectionService _duplicateDetection;
@@ -19,14 +23,14 @@ public class DpcmController : Controller
     private readonly ILogger<DpcmController> _logger;
 
     public DpcmController(
-        IDPRegistrationService registrationService,
+        ApplicationDbContext context,
         IPANVerificationService panService,
         IBankVerificationService bankService,
         IDuplicateDetectionService duplicateDetection,
         IDashboardService dashboardService,
         ILogger<DpcmController> logger)
     {
-        _registrationService = registrationService;
+        _context = context;
         _panService = panService;
         _bankService = bankService;
         _duplicateDetection = duplicateDetection;
@@ -66,6 +70,9 @@ public class DpcmController : Controller
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> SavePersonalInfo(DpcmRegistrationViewModel model)
     {
+        // Load existing session data first
+        LoadFromSession(model);
+
         ModelState.Clear();
         if (!TryValidateModel(model.PersonalInfo, nameof(model.PersonalInfo)))
         {
@@ -177,25 +184,73 @@ public class DpcmController : Controller
                 model.KycDocuments.PAN,
                 CancellationToken.None);
 
-            // Complete DPCM profile
-            var profileRequest = new ProfileCompleteRequest
-            {
-                FullName = model.PersonalInfo.FullName,
-                Email = model.PersonalInfo.Email,
-                DOB = model.PersonalInfo.DOB ?? DateTime.MinValue,
-                Gender = model.PersonalInfo.Gender,
-                ProfilePhotoUrl = model.PersonalInfo.ProfilePhotoUrl,
-                Address = new AddressDto
-                {
-                    Line1 = model.PersonalInfo.AddressLine1,
-                    Line2 = model.PersonalInfo.AddressLine2,
-                    City = model.PersonalInfo.City,
-                    State = model.PersonalInfo.State,
-                    Pincode = model.PersonalInfo.Pincode
-                }
-            };
+            // Create or update DPCM profile
+            var existingProfile = await _context.DPCManagers
+                .FirstOrDefaultAsync(d => d.UserId == userId);
 
-            await _registrationService.CompleteProfileAsync(userId, profileRequest);
+            if (existingProfile == null)
+            {
+                // Create new DPCM profile
+                var dpcmProfile = new DPCManager
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    ContactPersonName = model.PersonalInfo.FullName ?? "",
+                    OrganizationName = model.PersonalInfo.FullName ?? "", // Use name as organization for now
+                    PAN = model.KycDocuments.PAN ?? "",
+                    ServiceRegions = JsonSerializer.Serialize(new[] { model.PersonalInfo.City }),
+                    BankAccountEncrypted = JsonSerializer.Serialize(new
+                    {
+                        AccountHolderName = model.BankDetails.AccountHolderName,
+                        AccountNumber = model.BankDetails.AccountNumber,
+                        IFSCCode = model.BankDetails.IFSCCode,
+                        BankName = model.BankDetails.BankName,
+                        BranchName = model.BankDetails.BranchName
+                    }),
+                    CommissionType = "PERCENTAGE",
+                    CommissionValue = 5, // Default 5% commission
+                    IsActive = true,
+                    ActivatedAt = DateTime.UtcNow,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+
+                _context.DPCManagers.Add(dpcmProfile);
+            }
+            else
+            {
+                // Update existing profile
+                existingProfile.ContactPersonName = model.PersonalInfo.FullName ?? "";
+                existingProfile.PAN = model.KycDocuments.PAN ?? "";
+                existingProfile.UpdatedAt = DateTime.UtcNow;
+            }
+
+            // Update user email if provided
+            var user = await _context.Users.FindAsync(userId);
+            if (user != null && !string.IsNullOrEmpty(model.PersonalInfo.Email))
+            {
+                user.Email = model.PersonalInfo.Email;
+            }
+
+            // Create wallet if not exists
+            var existingWallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == userId);
+            if (existingWallet == null)
+            {
+                var wallet = new Wallet
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = userId,
+                    Balance = 0,
+                    HoldBalance = 0,
+                    Currency = "INR",
+                    IsActive = true,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Wallets.Add(wallet);
+            }
+
+            await _context.SaveChangesAsync();
 
             ClearSession();
 
@@ -214,7 +269,19 @@ public class DpcmController : Controller
     }
 
     /// <summary>
-    /// Navigate to previous step
+    /// Navigate to a specific step (GET for back links)
+    /// </summary>
+    [HttpGet]
+    public IActionResult GoToStep(int step)
+    {
+        var model = new DpcmRegistrationViewModel();
+        LoadFromSession(model);
+        model.CurrentStep = Math.Max(1, Math.Min(step, model.TotalSteps));
+        return View("Register", model);
+    }
+
+    /// <summary>
+    /// Navigate to previous step (POST for form submissions)
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -312,7 +379,7 @@ public class DpcmController : Controller
         try
         {
             // Fetch DPs from database service
-            var request = new DeliverX.Application.DTOs.Dashboard.DPCMPartnersRequest
+            var request = new DeliveryDost.Application.DTOs.Dashboard.DPCMPartnersRequest
             {
                 Status = status,
                 Page = page,
@@ -404,7 +471,10 @@ public class DpcmController : Controller
 
         HttpContext.Session.SetString($"{SessionKey}_AccountHolderName", model.BankDetails.AccountHolderName ?? "");
         HttpContext.Session.SetString($"{SessionKey}_AccountNumber", model.BankDetails.AccountNumber ?? "");
+        HttpContext.Session.SetString($"{SessionKey}_ConfirmAccountNumber", model.BankDetails.ConfirmAccountNumber ?? "");
         HttpContext.Session.SetString($"{SessionKey}_IFSCCode", model.BankDetails.IFSCCode ?? "");
+        HttpContext.Session.SetString($"{SessionKey}_BankName", model.BankDetails.BankName ?? "");
+        HttpContext.Session.SetString($"{SessionKey}_BranchName", model.BankDetails.BranchName ?? "");
 
         HttpContext.Session.SetString($"{SessionKey}_PAN", model.KycDocuments.PAN ?? "");
     }
@@ -425,7 +495,10 @@ public class DpcmController : Controller
 
         model.BankDetails.AccountHolderName = HttpContext.Session.GetString($"{SessionKey}_AccountHolderName") ?? model.BankDetails.AccountHolderName;
         model.BankDetails.AccountNumber = HttpContext.Session.GetString($"{SessionKey}_AccountNumber") ?? model.BankDetails.AccountNumber;
+        model.BankDetails.ConfirmAccountNumber = HttpContext.Session.GetString($"{SessionKey}_ConfirmAccountNumber") ?? model.BankDetails.ConfirmAccountNumber;
         model.BankDetails.IFSCCode = HttpContext.Session.GetString($"{SessionKey}_IFSCCode") ?? model.BankDetails.IFSCCode;
+        model.BankDetails.BankName = HttpContext.Session.GetString($"{SessionKey}_BankName") ?? model.BankDetails.BankName;
+        model.BankDetails.BranchName = HttpContext.Session.GetString($"{SessionKey}_BranchName") ?? model.BankDetails.BranchName;
 
         model.KycDocuments.PAN = HttpContext.Session.GetString($"{SessionKey}_PAN") ?? model.KycDocuments.PAN;
     }
@@ -436,7 +509,7 @@ public class DpcmController : Controller
         {
             "FullName", "Email", "DOB", "Gender",
             "AddressLine1", "AddressLine2", "City", "State", "Pincode",
-            "AccountHolderName", "AccountNumber", "IFSCCode",
+            "AccountHolderName", "AccountNumber", "ConfirmAccountNumber", "IFSCCode", "BankName", "BranchName",
             "PAN"
         };
 

@@ -6,10 +6,15 @@ namespace DeliveryDost.Web.ViewModels.Delivery;
 
 /// <summary>
 /// ViewModel for creating a new delivery
+/// Enhanced with Group 3 features: Address Name, Alternate Contacts, Save Address, Caution
 /// </summary>
 public class CreateDeliveryViewModel
 {
-    // Pickup Info
+    // ====== PICKUP INFO ======
+    [Display(Name = "Address Name")]
+    [StringLength(100)]
+    public string? PickupAddressName { get; set; } // e.g., "Home", "Office"
+
     [Required(ErrorMessage = "Pickup address is required")]
     [Display(Name = "Pickup Address")]
     public string PickupAddress { get; set; } = string.Empty;
@@ -27,14 +32,36 @@ public class CreateDeliveryViewModel
     public string? PickupContactName { get; set; }
 
     [Display(Name = "Contact Phone")]
-    [Phone(ErrorMessage = "Invalid phone number")]
+    [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Invalid Indian phone number (must start with 6-9 and be 10 digits)")]
     public string? PickupContactPhone { get; set; }
+
+    [Display(Name = "Alternate Phone")]
+    [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Invalid Indian phone number")]
+    public string? PickupAlternatePhone { get; set; }
+
+    [Display(Name = "Email")]
+    [EmailAddress(ErrorMessage = "Invalid email address")]
+    public string? PickupContactEmail { get; set; }
+
+    [Display(Name = "WhatsApp Number")]
+    [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Invalid WhatsApp number")]
+    public string? PickupWhatsAppNumber { get; set; }
 
     [Display(Name = "Pickup Instructions")]
     [StringLength(500)]
     public string? PickupInstructions { get; set; }
 
-    // Drop Info
+    // Save Address Option
+    [Display(Name = "Save this address for future use")]
+    public bool SavePickupAddress { get; set; } = false;
+
+    public Guid? PickupSavedAddressId { get; set; }
+
+    // ====== DROP INFO ======
+    [Display(Name = "Address Name")]
+    [StringLength(100)]
+    public string? DropAddressName { get; set; } // e.g., "Home", "Office"
+
     [Required(ErrorMessage = "Drop address is required")]
     [Display(Name = "Drop Address")]
     public string DropAddress { get; set; } = string.Empty;
@@ -53,14 +80,32 @@ public class CreateDeliveryViewModel
 
     [Required(ErrorMessage = "Recipient phone is required")]
     [Display(Name = "Recipient Phone")]
-    [Phone(ErrorMessage = "Invalid phone number")]
+    [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Invalid Indian phone number (must start with 6-9 and be 10 digits)")]
     public string DropContactPhone { get; set; } = string.Empty;
+
+    [Display(Name = "Alternate Phone")]
+    [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Invalid Indian phone number")]
+    public string? DropAlternatePhone { get; set; }
+
+    [Display(Name = "Email")]
+    [EmailAddress(ErrorMessage = "Invalid email address")]
+    public string? DropContactEmail { get; set; }
+
+    [Display(Name = "WhatsApp Number")]
+    [RegularExpression(@"^[6-9]\d{9}$", ErrorMessage = "Invalid WhatsApp number")]
+    public string? DropWhatsAppNumber { get; set; }
 
     [Display(Name = "Drop Instructions")]
     [StringLength(500)]
     public string? DropInstructions { get; set; }
 
-    // Package Info
+    // Save Address Option
+    [Display(Name = "Save this address for future use")]
+    public bool SaveDropAddress { get; set; } = false;
+
+    public Guid? DropSavedAddressId { get; set; }
+
+    // ====== PACKAGE INFO ======
     [Required]
     [Range(0.1, 100, ErrorMessage = "Weight must be between 0.1 and 100 kg")]
     [Display(Name = "Weight (kg)")]
@@ -78,7 +123,21 @@ public class CreateDeliveryViewModel
     [StringLength(500)]
     public string? PackageDescription { get; set; }
 
-    // Scheduling
+    // ====== CAUTION/HAZARD INFO (Group 3) ======
+    [Display(Name = "Contains hazardous items")]
+    public bool IsHazardous { get; set; } = false;
+
+    [Display(Name = "Caution Type")]
+    public string? CautionType { get; set; }
+
+    [Display(Name = "Caution Notes")]
+    [StringLength(500)]
+    public string? CautionNotes { get; set; }
+
+    [Display(Name = "Requires special handling")]
+    public bool RequiresSpecialHandling { get; set; } = false;
+
+    // ====== SCHEDULING ======
     [Required]
     [Display(Name = "Priority")]
     public string Priority { get; set; } = "ASAP";
@@ -93,17 +152,27 @@ public class CreateDeliveryViewModel
     // Preferred DP (optional)
     public Guid? PreferredDPId { get; set; }
 
-    // Calculated fields (populated after validation)
+    // ====== CALCULATED FIELDS ======
     public decimal? EstimatedDistance { get; set; }
+    public int? EstimatedDuration { get; set; }
     public decimal? EstimatedPrice { get; set; }
+    public string? DistanceSource { get; set; }
 
-    // Dropdown options
+    // ====== SAVED ADDRESSES (for dropdown selection) ======
+    public List<SavedAddressOption> SavedPickupAddresses { get; set; } = new();
+    public List<SavedAddressOption> SavedDropAddresses { get; set; } = new();
+
+    // ====== DROPDOWN OPTIONS ======
     public static List<SelectOption> PackageTypes => new()
     {
         new SelectOption("parcel", "Parcel / Box"),
         new SelectOption("food", "Food / Perishables"),
         new SelectOption("document", "Documents"),
-        new SelectOption("fragile", "Fragile Items")
+        new SelectOption("fragile", "Fragile Items"),
+        new SelectOption("electronics", "Electronics"),
+        new SelectOption("medicine", "Medicines"),
+        new SelectOption("clothing", "Clothing / Apparel"),
+        new SelectOption("other", "Other")
     };
 
     public static List<SelectOption> PriorityOptions => new()
@@ -111,6 +180,51 @@ public class CreateDeliveryViewModel
         new SelectOption("ASAP", "ASAP - Deliver Now"),
         new SelectOption("SCHEDULED", "Schedule for Later")
     };
+
+    public static List<SelectOption> CautionTypes => new()
+    {
+        new SelectOption("NONE", "No Special Caution"),
+        new SelectOption("FRAGILE", "Fragile - Handle with Care"),
+        new SelectOption("PERISHABLE", "Perishable - Time Sensitive"),
+        new SelectOption("LIQUID", "Liquid - Keep Upright"),
+        new SelectOption("GLASS", "Glass - Breakable"),
+        new SelectOption("ELECTRONIC", "Electronics - Keep Dry"),
+        new SelectOption("FLAMMABLE", "Flammable - No Fire"),
+        new SelectOption("CHEMICAL", "Chemical - Handle Carefully"),
+        new SelectOption("HEAVY", "Heavy - Use Proper Lifting"),
+        new SelectOption("VALUABLE", "High Value - Extra Care")
+    };
+
+    public static List<SelectOption> AddressTypes => new()
+    {
+        new SelectOption("HOME", "Home"),
+        new SelectOption("OFFICE", "Office"),
+        new SelectOption("WAREHOUSE", "Warehouse"),
+        new SelectOption("STORE", "Store/Shop"),
+        new SelectOption("OTHER", "Other")
+    };
+}
+
+/// <summary>
+/// Saved address option for dropdown
+/// </summary>
+public class SavedAddressOption
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string ShortAddress { get; set; } = string.Empty;
+    public string AddressType { get; set; } = string.Empty;
+    public decimal Lat { get; set; }
+    public decimal Lng { get; set; }
+    public string? ContactName { get; set; }
+    public string? ContactPhone { get; set; }
+    public string? AlternatePhone { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? WhatsAppNumber { get; set; }
+    public string? Instructions { get; set; }
+    public bool IsDefault { get; set; }
+
+    public string DisplayText => IsDefault ? $"{Name} (Default) - {ShortAddress}" : $"{Name} - {ShortAddress}";
 }
 
 /// <summary>
@@ -154,13 +268,17 @@ public class DeliveryListItemViewModel
 {
     public Guid Id { get; set; }
     public string Status { get; set; } = string.Empty;
+    public string? PickupAddressName { get; set; }
     public string PickupAddress { get; set; } = string.Empty;
+    public string? DropAddressName { get; set; }
     public string DropAddress { get; set; } = string.Empty;
     public decimal? EstimatedPrice { get; set; }
     public decimal? DistanceKm { get; set; }
     public string? AssignedDPName { get; set; }
     public DateTime CreatedAt { get; set; }
     public string Priority { get; set; } = string.Empty;
+    public bool IsHazardous { get; set; }
+    public string? CautionType { get; set; }
 
     public string StatusBadgeClass => Status switch
     {
@@ -187,6 +305,15 @@ public class DeliveryListItemViewModel
         "CANCELLED" => "bi-x-circle",
         _ => "bi-circle"
     };
+
+    public string CautionBadgeClass => CautionType switch
+    {
+        "FRAGILE" => "bg-warning text-dark",
+        "FLAMMABLE" => "bg-danger",
+        "PERISHABLE" => "bg-info",
+        "CHEMICAL" => "bg-danger",
+        _ => "bg-secondary"
+    };
 }
 
 /// <summary>
@@ -212,6 +339,8 @@ public class DeliveryDetailsViewModel
     public decimal? EstimatedPrice { get; set; }
     public decimal? FinalPrice { get; set; }
     public decimal? DistanceKm { get; set; }
+    public string? DistanceSource { get; set; }
+    public int? EstimatedDurationMinutes { get; set; }
 
     // Timeline
     public List<TimelineItemViewModel> Timeline { get; set; } = new();
@@ -240,11 +369,15 @@ public class DeliveryDetailsViewModel
 
 public class LocationViewModel
 {
+    public string? AddressName { get; set; }
     public decimal Lat { get; set; }
     public decimal Lng { get; set; }
     public string Address { get; set; } = string.Empty;
     public string? ContactName { get; set; }
     public string? ContactPhone { get; set; }
+    public string? AlternatePhone { get; set; }
+    public string? ContactEmail { get; set; }
+    public string? WhatsAppNumber { get; set; }
     public string? Instructions { get; set; }
 }
 
@@ -254,6 +387,10 @@ public class PackageViewModel
     public string Type { get; set; } = "parcel";
     public decimal? Value { get; set; }
     public string? Description { get; set; }
+    public bool IsHazardous { get; set; }
+    public string? CautionType { get; set; }
+    public string? CautionNotes { get; set; }
+    public bool RequiresSpecialHandling { get; set; }
 
     public string TypeDisplay => Type switch
     {
@@ -261,7 +398,24 @@ public class PackageViewModel
         "food" => "Food / Perishables",
         "document" => "Documents",
         "fragile" => "Fragile Items",
+        "electronics" => "Electronics",
+        "medicine" => "Medicines",
+        "clothing" => "Clothing / Apparel",
         _ => Type
+    };
+
+    public string CautionDisplay => CautionType switch
+    {
+        "FRAGILE" => "Fragile - Handle with Care",
+        "PERISHABLE" => "Perishable - Time Sensitive",
+        "LIQUID" => "Liquid - Keep Upright",
+        "GLASS" => "Glass - Breakable",
+        "ELECTRONIC" => "Electronics - Keep Dry",
+        "FLAMMABLE" => "Flammable - No Fire",
+        "CHEMICAL" => "Chemical - Handle Carefully",
+        "HEAVY" => "Heavy - Use Proper Lifting",
+        "VALUABLE" => "High Value - Extra Care",
+        _ => "No Special Caution"
     };
 }
 
@@ -335,6 +489,14 @@ public class AvailableDeliveryItemViewModel
     public string Priority { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
     public int MinutesRemaining { get; set; } // Time to accept
+    public bool IsHazardous { get; set; }
+    public string? CautionType { get; set; }
+
+    // Bidding Support (Group 4)
+    public decimal? CurrentBid { get; set; }
+    public int BidCount { get; set; }
+    public decimal MinBid { get; set; }
+    public decimal MaxBid { get; set; }
 }
 
 public class DPAvailabilityViewModel

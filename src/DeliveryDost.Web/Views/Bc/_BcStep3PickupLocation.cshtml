@@ -1,0 +1,101 @@
+@model DeliveryDost.Web.ViewModels.Bc.BcRegistrationViewModel
+
+<h4 class="mb-4"><i class="bi bi-geo-alt me-2"></i>Primary Pickup Location</h4>
+<p class="text-muted mb-4">Where will delivery partners pick up packages from?</p>
+
+<form asp-action="SavePickupLocation" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="PickupLocation.LocationName" class="form-label"></label>
+                <input asp-for="PickupLocation.LocationName" class="form-control" placeholder="e.g., Main Office, Warehouse" />
+                <span asp-validation-for="PickupLocation.LocationName" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PickupLocation.AddressLine1" class="form-label"></label>
+        <input asp-for="PickupLocation.AddressLine1" class="form-control" placeholder="Building, Street, Area" />
+        <span asp-validation-for="PickupLocation.AddressLine1" class="text-danger"></span>
+    </div>
+
+    <div class="mb-3">
+        <label asp-for="PickupLocation.AddressLine2" class="form-label"></label>
+        <input asp-for="PickupLocation.AddressLine2" class="form-control" placeholder="Landmark (Optional)" />
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="PickupLocation.City" class="form-label"></label>
+                <input asp-for="PickupLocation.City" class="form-control" placeholder="City" />
+                <span asp-validation-for="PickupLocation.City" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="PickupLocation.State" class="form-label"></label>
+                <select asp-for="PickupLocation.State" class="form-select">
+                    <option value="">Select State</option>
+                    <option value="Andhra Pradesh">Andhra Pradesh</option>
+                    <option value="Delhi">Delhi</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Tamil Nadu">Tamil Nadu</option>
+                    <option value="Telangana">Telangana</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="West Bengal">West Bengal</option>
+                </select>
+                <span asp-validation-for="PickupLocation.State" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="PickupLocation.Pincode" class="form-label"></label>
+                <input asp-for="PickupLocation.Pincode" class="form-control" placeholder="6-digit pincode" maxlength="6" />
+                <span asp-validation-for="PickupLocation.Pincode" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-person me-2"></i>Pickup Contact (Optional)</h5>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="PickupLocation.ContactName" class="form-label"></label>
+                    <input asp-for="PickupLocation.ContactName" class="form-control" placeholder="Contact person at pickup" />
+                </div>
+            </div>
+            <div class="col-md-6">
+                <div class="mb-3">
+                    <label asp-for="PickupLocation.ContactPhone" class="form-label"></label>
+                    <input asp-for="PickupLocation.ContactPhone" class="form-control" placeholder="10-digit phone" maxlength="10" />
+                    <span asp-validation-for="PickupLocation.ContactPhone" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <input type="hidden" asp-for="PickupLocation.Latitude" />
+    <input type="hidden" asp-for="PickupLocation.Longitude" />
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle me-2"></i>
+        You can add more pickup locations later from your dashboard.
+    </div>
+
+    <div class="btn-group-nav">
+        <button type="submit" formaction="@Url.Action("GoToStep", new { step = 2 })" formnovalidate class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button type="submit" formaction="@Url.Action("SavePickupLocation")" class="btn btn-primary">
+            Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+    </div>
+</form>

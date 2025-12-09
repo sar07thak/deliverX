@@ -63,10 +63,10 @@
     </div>
 
     <div class="btn-group-nav">
-        <button type="submit" asp-action="GoToStep" asp-route-step="2" class="btn btn-outline-secondary">
+        <button type="submit" formaction="@Url.Action("GoToStep", new { step = 2 })" formnovalidate class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Back
         </button>
-        <button type="submit" class="btn btn-primary">
+        <button type="submit" formaction="@Url.Action("SaveBankDetails")" class="btn btn-primary">
             Next <i class="bi bi-arrow-right ms-1"></i>
         </button>
     </div>

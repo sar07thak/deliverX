@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DeliverX.Application.DTOs.ServiceArea;
-using DeliverX.Application.Services;
+using DeliveryDost.Application.DTOs.ServiceArea;
+using DeliveryDost.Application.Services;
 using DeliveryDost.Web.ViewModels.ServiceArea;
 
 namespace DeliveryDost.Web.Controllers;

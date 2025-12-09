@@ -1,8 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DeliverX.Application.DTOs.Wallet;
-using DeliverX.Application.Services;
+using DeliveryDost.Application.DTOs.Wallet;
+using DeliveryDost.Application.Services;
 using DeliveryDost.Web.ViewModels.Wallet;
 
 namespace DeliveryDost.Web.Controllers;

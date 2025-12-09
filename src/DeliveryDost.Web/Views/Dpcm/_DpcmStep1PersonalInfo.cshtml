@@ -85,7 +85,7 @@
             <div class="col-md-4">
                 <div class="mb-3">
                     <label asp-for="PersonalInfo.Pincode" class="form-label"></label>
-                    <input asp-for="PersonalInfo.Pincode" class="form-control" placeholder="6-digit pincode" maxlength="6" />
+                    <input asp-for="PersonalInfo.Pincode" class="form-control" placeholder="6-digit pincode" maxlength="6" id="pincodeInput" inputmode="numeric" />
                     <span asp-validation-for="PersonalInfo.Pincode" class="text-danger"></span>
                 </div>
             </div>
@@ -119,3 +119,10 @@
         </button>
     </div>
 </form>
+
+<script>
+    // Allow only digits in pincode field
+    document.getElementById('pincodeInput')?.addEventListener('input', function(e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+</script>

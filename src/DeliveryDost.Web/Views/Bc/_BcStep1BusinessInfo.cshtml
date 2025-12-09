@@ -1,0 +1,150 @@
+@model DeliveryDost.Web.ViewModels.Bc.BcRegistrationViewModel
+@using DeliveryDost.Web.ViewModels.Bc
+
+<h4 class="mb-4"><i class="bi bi-building me-2"></i>Business Information</h4>
+
+<form asp-action="SaveBusinessInfo" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.ContactPersonName" class="form-label"></label>
+                <input asp-for="BusinessInfo.ContactPersonName" class="form-control" placeholder="Your full name" />
+                <span asp-validation-for="BusinessInfo.ContactPersonName" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.BusinessName" class="form-label"></label>
+                <input asp-for="BusinessInfo.BusinessName" class="form-control" placeholder="Your business name" />
+                <span asp-validation-for="BusinessInfo.BusinessName" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.Email" class="form-label"></label>
+                <input asp-for="BusinessInfo.Email" class="form-control" type="email" placeholder="business@example.com" />
+                <span asp-validation-for="BusinessInfo.Email" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.BusinessConstitution" class="form-label"></label>
+                <select asp-for="BusinessInfo.BusinessConstitution" class="form-select">
+                    <option value="">Select Constitution</option>
+                    @foreach (var option in BcBusinessInfoViewModel.BusinessConstitutionOptions)
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                </select>
+                <span asp-validation-for="BusinessInfo.BusinessConstitution" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.BusinessCategory" class="form-label"></label>
+                <select asp-for="BusinessInfo.BusinessCategory" class="form-select">
+                    <option value="">Select Category</option>
+                    @foreach (var option in BcBusinessInfoViewModel.BusinessCategoryOptions)
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                </select>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.PAN" class="form-label"></label>
+                <input asp-for="BusinessInfo.PAN" class="form-control text-uppercase" placeholder="ABCDE1234F" maxlength="10" />
+                <span asp-validation-for="BusinessInfo.PAN" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.GSTIN" class="form-label"></label>
+                <input asp-for="BusinessInfo.GSTIN" class="form-control text-uppercase" placeholder="Optional" maxlength="15" />
+                <span asp-validation-for="BusinessInfo.GSTIN" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="BusinessInfo.GSTRegistrationType" class="form-label"></label>
+                <select asp-for="BusinessInfo.GSTRegistrationType" class="form-select">
+                    <option value="">Select Type</option>
+                    @foreach (var option in BcBusinessInfoViewModel.GSTRegistrationTypeOptions)
+                    {
+                        <option value="@option.Value">@option.Text</option>
+                    }
+                </select>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-section">
+        <h5 class="form-section-title"><i class="bi bi-geo-alt me-2"></i>Business Address</h5>
+
+        <div class="mb-3">
+            <label asp-for="BusinessInfo.AddressLine1" class="form-label"></label>
+            <input asp-for="BusinessInfo.AddressLine1" class="form-control" placeholder="Building, Street, Area" />
+            <span asp-validation-for="BusinessInfo.AddressLine1" class="text-danger"></span>
+        </div>
+
+        <div class="mb-3">
+            <label asp-for="BusinessInfo.AddressLine2" class="form-label"></label>
+            <input asp-for="BusinessInfo.AddressLine2" class="form-control" placeholder="Landmark (Optional)" />
+        </div>
+
+        <div class="row">
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="BusinessInfo.City" class="form-label"></label>
+                    <input asp-for="BusinessInfo.City" class="form-control" placeholder="City" />
+                    <span asp-validation-for="BusinessInfo.City" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="BusinessInfo.State" class="form-label"></label>
+                    <select asp-for="BusinessInfo.State" class="form-select">
+                        <option value="">Select State</option>
+                        <option value="Andhra Pradesh">Andhra Pradesh</option>
+                        <option value="Delhi">Delhi</option>
+                        <option value="Gujarat">Gujarat</option>
+                        <option value="Karnataka">Karnataka</option>
+                        <option value="Maharashtra">Maharashtra</option>
+                        <option value="Tamil Nadu">Tamil Nadu</option>
+                        <option value="Telangana">Telangana</option>
+                        <option value="Uttar Pradesh">Uttar Pradesh</option>
+                        <option value="West Bengal">West Bengal</option>
+                    </select>
+                    <span asp-validation-for="BusinessInfo.State" class="text-danger"></span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="mb-3">
+                    <label asp-for="BusinessInfo.Pincode" class="form-label"></label>
+                    <input asp-for="BusinessInfo.Pincode" class="form-control" placeholder="6-digit pincode" maxlength="6" />
+                    <span asp-validation-for="BusinessInfo.Pincode" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="btn-group-nav">
+        <div></div>
+        <button type="submit" class="btn btn-primary">
+            Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+    </div>
+</form>

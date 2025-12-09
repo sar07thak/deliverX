@@ -2,8 +2,8 @@ using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using DeliverX.Application.DTOs.Delivery;
-using DeliverX.Application.Services;
+using DeliveryDost.Application.DTOs.Delivery;
+using DeliveryDost.Application.Services;
 using DeliveryDost.Web.ViewModels.Delivery;
 using DeliveryDost.Web.ViewModels.Business;
 

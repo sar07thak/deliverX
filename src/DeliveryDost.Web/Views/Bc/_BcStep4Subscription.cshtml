@@ -1,0 +1,123 @@
+@model DeliveryDost.Web.ViewModels.Bc.BcRegistrationViewModel
+
+<h4 class="mb-4"><i class="bi bi-credit-card me-2"></i>Choose Your Plan</h4>
+<p class="text-muted mb-4">Select a subscription plan that fits your business needs</p>
+
+<form asp-action="CompleteRegistration" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    @if (Model.Subscription.AvailablePlans.Any())
+    {
+        <div class="row">
+            @foreach (var plan in Model.Subscription.AvailablePlans)
+            {
+                var isSelected = Model.Subscription.SelectedPlanId == plan.Id;
+                <div class="col-md-4 mb-4">
+                    <div class="card h-100 @(isSelected ? "border-primary" : "") @(plan.IsPopular ? "border-success" : "")" style="cursor: pointer;" onclick="selectPlan('@plan.Id')">
+                        @if (plan.IsPopular)
+                        {
+                            <div class="card-header bg-success text-white text-center py-1">
+                                <small><i class="bi bi-star-fill me-1"></i>Most Popular</small>
+                            </div>
+                        }
+                        <div class="card-body">
+                            <h5 class="card-title">@plan.Name</h5>
+                            <p class="text-muted small">@plan.Description</p>
+
+                            <div class="mb-3">
+                                @if (plan.DiscountedPrice.HasValue && plan.DiscountedPrice < plan.Price)
+                                {
+                                    <span class="text-decoration-line-through text-muted">Rs.@plan.Price.ToString("N0")</span>
+                                    <h3 class="d-inline text-success">Rs.@plan.DiscountedPrice.Value.ToString("N0")</h3>
+                                }
+                                else
+                                {
+                                    <h3 class="d-inline">Rs.@plan.Price.ToString("N0")</h3>
+                                }
+                                <span class="text-muted">/@plan.BillingCycle.ToLower()</span>
+                            </div>
+
+                            <ul class="list-unstyled">
+                                <li class="mb-2">
+                                    <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                    @plan.DeliveryQuota deliveries/month
+                                </li>
+                                @if (plan.PerDeliveryDiscount.HasValue)
+                                {
+                                    <li class="mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        @plan.PerDeliveryDiscount% discount per delivery
+                                    </li>
+                                }
+                                @if (plan.PrioritySupport)
+                                {
+                                    <li class="mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        Priority Support
+                                    </li>
+                                }
+                                @foreach (var feature in plan.Features.Take(3))
+                                {
+                                    <li class="mb-2">
+                                        <i class="bi bi-check-circle-fill text-success me-2"></i>
+                                        @feature
+                                    </li>
+                                }
+                            </ul>
+
+                            <div class="form-check mt-3">
+                                <input class="form-check-input" type="radio" name="Subscription.SelectedPlanId"
+                                       value="@plan.Id" id="plan_@plan.Id" @(isSelected ? "checked" : "") />
+                                <label class="form-check-label" for="plan_@plan.Id">
+                                    Select this plan
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle me-2"></i>
+            No subscription plans available. Please contact support.
+        </div>
+    }
+
+    <span asp-validation-for="Subscription.SelectedPlanId" class="text-danger"></span>
+
+    <div class="row mt-3">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="Subscription.PromoCode" class="form-label">Promo Code (Optional)</label>
+                <div class="input-group">
+                    <input asp-for="Subscription.PromoCode" class="form-control" placeholder="Enter promo code" />
+                    <button type="button" class="btn btn-outline-secondary">Apply</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-success">
+        <i class="bi bi-check-circle me-2"></i>
+        <strong>Almost done!</strong> Click "Complete Registration" to finish setup. Payment will be collected separately.
+    </div>
+
+    <div class="btn-group-nav">
+        <button type="submit" formaction="@Url.Action("GoToStep", new { step = 3 })" formnovalidate class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button type="submit" formaction="@Url.Action("CompleteRegistration")" class="btn btn-success btn-lg">
+            <i class="bi bi-check-circle me-1"></i> Complete Registration
+        </button>
+    </div>
+</form>
+
+<script>
+    function selectPlan(planId) {
+        document.getElementById('plan_' + planId).checked = true;
+    }
+</script>

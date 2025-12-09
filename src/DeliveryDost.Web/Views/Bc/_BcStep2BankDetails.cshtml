@@ -1,0 +1,93 @@
+@model DeliveryDost.Web.ViewModels.Bc.BcRegistrationViewModel
+
+<h4 class="mb-4"><i class="bi bi-bank me-2"></i>Bank Account Details</h4>
+<p class="text-muted mb-4">For receiving refunds and settlements</p>
+
+<form asp-action="SaveBankDetails" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="CurrentStep" />
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="mb-3">
+                <label asp-for="BankDetails.AccountHolderName" class="form-label"></label>
+                <input asp-for="BankDetails.AccountHolderName" class="form-control" placeholder="Name as per bank records" />
+                <span asp-validation-for="BankDetails.AccountHolderName" class="text-danger"></span>
+                <small class="text-muted">This should match the name on your bank account</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="BankDetails.AccountNumber" class="form-label"></label>
+                <input asp-for="BankDetails.AccountNumber" class="form-control" placeholder="Account Number" maxlength="18" />
+                <span asp-validation-for="BankDetails.AccountNumber" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="mb-3">
+                <label asp-for="BankDetails.ConfirmAccountNumber" class="form-label"></label>
+                <input asp-for="BankDetails.ConfirmAccountNumber" class="form-control" placeholder="Re-enter Account Number" maxlength="18" />
+                <span asp-validation-for="BankDetails.ConfirmAccountNumber" class="text-danger"></span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="BankDetails.IFSCCode" class="form-label"></label>
+                <input asp-for="BankDetails.IFSCCode" class="form-control text-uppercase" placeholder="ABCD0123456" maxlength="11" id="ifscCode" />
+                <span asp-validation-for="BankDetails.IFSCCode" class="text-danger"></span>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="BankDetails.BankName" class="form-label"></label>
+                <input asp-for="BankDetails.BankName" class="form-control" readonly id="bankName" placeholder="Auto-detected" />
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="mb-3">
+                <label asp-for="BankDetails.BranchName" class="form-label"></label>
+                <input asp-for="BankDetails.BranchName" class="form-control" readonly id="branchName" placeholder="Auto-detected" />
+            </div>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-shield-check me-2"></i>
+        <strong>Verification:</strong> We will verify your bank account. This may take up to 24 hours.
+    </div>
+
+    <div class="btn-group-nav">
+        <button type="submit" formaction="@Url.Action("GoToStep", new { step = 1 })" formnovalidate class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back
+        </button>
+        <button type="submit" formaction="@Url.Action("SaveBankDetails")" class="btn btn-primary">
+            Next <i class="bi bi-arrow-right ms-1"></i>
+        </button>
+    </div>
+</form>
+
+<script>
+    document.getElementById('ifscCode').addEventListener('input', async function(e) {
+        const ifsc = e.target.value.toUpperCase();
+        e.target.value = ifsc;
+
+        if (ifsc.length === 11) {
+            try {
+                const response = await fetch(`https://ifsc.razorpay.com/${ifsc}`);
+                if (response.ok) {
+                    const data = await response.json();
+                    document.getElementById('bankName').value = data.BANK || '';
+                    document.getElementById('branchName').value = data.BRANCH || '';
+                }
+            } catch (err) {
+                console.log('Could not fetch bank details');
+            }
+        }
+    });
+</script>

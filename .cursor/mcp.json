@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "mssql": {
+      "command": "cmd",
+      "args": ["/c", "npx", "-y", "mssql-mcp-server"],
+      "env": {
+        "MSSQL_HOST": "103.180.120.159",
+        "MSSQL_DATABASE": "DeliveryDost_Dev",
+        "MSSQL_USER": "mcp_deliverydost_login",
+        "MSSQL_PASSWORD": "J7vR9pWd83ZqTmK2HsxLFbN1Q2025"
+      }
+    }
+  }
+}

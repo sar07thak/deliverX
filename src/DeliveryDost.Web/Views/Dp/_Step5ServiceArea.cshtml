@@ -146,10 +146,10 @@
     </div>
 
     <div class="btn-group-nav">
-        <button type="submit" asp-action="GoToStep" asp-route-step="4" class="btn btn-outline-secondary">
+        <button type="submit" formaction="@Url.Action("GoToStep", new { step = 4 })" formnovalidate class="btn btn-outline-secondary">
             <i class="bi bi-arrow-left me-1"></i> Back
         </button>
-        <button type="submit" class="btn btn-success btn-lg">
+        <button type="submit" formaction="@Url.Action("CompleteRegistration")" class="btn btn-success btn-lg">
             <i class="bi bi-check-circle me-1"></i> Complete Registration
         </button>
     </div>

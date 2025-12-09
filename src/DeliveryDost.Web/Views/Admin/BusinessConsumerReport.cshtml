@@ -1,0 +1,239 @@
+@model DeliveryDost.Web.ViewModels.Admin.BusinessConsumerReportViewModel
+@{ ViewData["Title"] = "Business Consumer Report"; }
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title"><i class="bi bi-building me-2"></i>Business Consumer Report</h1>
+            <p class="page-subtitle">Report of all Business Consumers with KYC & Subscription details</p>
+        </div>
+        <span class="badge bg-primary fs-6">@Model.TotalCount Records</span>
+    </div>
+</div>
+
+<!-- Filters -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Search</label>
+                <input type="text" name="searchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Search by name, business name, phone...">
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Status</option>
+                    <option value="ACTIVE" selected="@(Model.Status == "ACTIVE")">Active</option>
+                    <option value="INACTIVE" selected="@(Model.Status == "INACTIVE")">Inactive</option>
+                </select>
+            </div>
+            <div class="col-md-3 d-flex align-items-end gap-2">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search me-1"></i>Search
+                </button>
+                <a asp-action="BusinessConsumerReport" class="btn btn-outline-secondary">
+                    <i class="bi bi-x-circle me-1"></i>Clear
+                </a>
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-success" disabled title="Export coming soon">
+                    <i class="bi bi-file-excel me-1"></i>Export
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Report Table -->
+<div class="card">
+    <div class="card-body p-0">
+        @if (Model.Items.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 table-sm">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Name</th>
+                            <th>Business Name</th>
+                            <th>Personal PAN</th>
+                            <th>Aadhaar</th>
+                            <th>Mobile</th>
+                            <th>Email</th>
+                            <th>Location</th>
+                            <th>Joined</th>
+                            <th>Pickup Loc.</th>
+                            <th>Subscription</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model.Items)
+                        {
+                            <tr>
+                                <td><strong>@item.Name</strong></td>
+                                <td>@(item.BusinessName ?? "-")</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.PersonalPAN))
+                                    {
+                                        <span class="encrypted-field" data-original="@item.PersonalPAN" title="Hover to reveal">
+                                            @item.PersonalPANMasked
+                                        </span>
+                                        <br/>
+                                        <span class="badge @(item.PersonalPANVerificationStatus == "VERIFIED" ? "bg-success" : (item.PersonalPANVerificationStatus == "PENDING" ? "bg-warning" : "bg-secondary"))" style="font-size: 0.65rem;">@item.PersonalPANVerificationStatus</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.AadhaarNumber))
+                                    {
+                                        <span class="encrypted-field" data-original="@item.AadhaarNumber" title="Hover to reveal">
+                                            @item.AadhaarNumberMasked
+                                        </span>
+                                        <br/>
+                                        <span class="badge @(item.AadhaarVerificationStatus == "VERIFIED" ? "bg-success" : (item.AadhaarVerificationStatus == "PENDING" ? "bg-warning" : "bg-secondary"))" style="font-size: 0.65rem;">@item.AadhaarVerificationStatus</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge @(item.AadhaarVerificationStatus == "VERIFIED" ? "bg-success" : (item.AadhaarVerificationStatus == "PENDING" ? "bg-warning" : "bg-secondary"))" style="font-size: 0.65rem;">@item.AadhaarVerificationStatus</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="encrypted-field" data-original="@item.MobileNumber" title="Hover to reveal">
+                                        @item.MobileNumberMasked
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.EmailId))
+                                    {
+                                        <span class="encrypted-field" data-original="@item.EmailId" title="Hover to reveal">
+                                            @item.EmailIdMasked
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <small>
+                                        @(item.StateName ?? "-") / @(item.DistrictName ?? "-")
+                                        <br/>@(item.Pincode ?? "-")
+                                    </small>
+                                </td>
+                                <td><small>@item.DateOfJoining.ToString("dd/MM/yy")</small></td>
+                                <td><span class="badge bg-info">@item.NumberOfPickupLocations</span></td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(item.SubscriptionPlanName))
+                                    {
+                                        <small>
+                                            <strong>@item.SubscriptionPlanName</strong>
+                                            @if (item.SubscriptionExpiry.HasValue)
+                                            {
+                                                <br/><span class="text-muted">Exp: @item.SubscriptionExpiry.Value.ToString("dd/MM/yy")</span>
+                                            }
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">None</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (item.Status == "ACTIVE")
+                                    {
+                                        <span class="badge bg-success">Active</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">Inactive</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-inbox text-muted" style="font-size: 3rem;"></i>
+                <p class="text-muted mt-3">No Business Consumers found</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Pagination -->
+@if (Model.TotalPages > 1)
+{
+    <nav class="mt-4">
+        <ul class="pagination justify-content-center">
+            @if (Model.Page > 1)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="BusinessConsumerReport"
+                       asp-route-page="@(Model.Page - 1)"
+                       asp-route-searchTerm="@Model.SearchTerm"
+                       asp-route-status="@Model.Status">Previous</a>
+                </li>
+            }
+            @for (int i = Math.Max(1, Model.Page - 2); i <= Math.Min(Model.TotalPages, Model.Page + 2); i++)
+            {
+                <li class="page-item @(Model.Page == i ? "active" : "")">
+                    <a class="page-link" asp-action="BusinessConsumerReport"
+                       asp-route-page="@i"
+                       asp-route-searchTerm="@Model.SearchTerm"
+                       asp-route-status="@Model.Status">@i</a>
+                </li>
+            }
+            @if (Model.Page < Model.TotalPages)
+            {
+                <li class="page-item">
+                    <a class="page-link" asp-action="BusinessConsumerReport"
+                       asp-route-page="@(Model.Page + 1)"
+                       asp-route-searchTerm="@Model.SearchTerm"
+                       asp-route-status="@Model.Status">Next</a>
+                </li>
+            }
+        </ul>
+    </nav>
+}
+
+@section Styles {
+    <style>
+        .encrypted-field {
+            cursor: pointer;
+            font-family: monospace;
+            background-color: #f8f9fa;
+            padding: 2px 6px;
+            border-radius: 3px;
+            transition: all 0.2s ease;
+            font-size: 0.85rem;
+        }
+        .encrypted-field:hover {
+            background-color: #fff3cd;
+        }
+        .encrypted-field.revealed {
+            background-color: #d1e7dd;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.querySelectorAll('.encrypted-field').forEach(function(el) {
+            var original = el.getAttribute('data-original');
+            var masked = el.textContent;
+            el.addEventListener('mouseenter', function() {
+                if (original) { el.textContent = original; el.classList.add('revealed'); }
+            });
+            el.addEventListener('mouseleave', function() {
+                el.textContent = masked; el.classList.remove('revealed');
+            });
+        });
+    </script>
+}
