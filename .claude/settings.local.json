@@ -21,7 +21,10 @@
       "Bash(xargs:*)",
       "Bash(find:*)",
       "Bash(cmd.exe /c \"taskkill /F /PID 11668\")",
-      "Bash(cmd.exe /c \"taskkill /F /PID 19188\")"
+      "Bash(cmd.exe /c \"taskkill /F /PID 19188\")",
+      "Bash(cmd.exe /c \"taskkill /F /PID 28680\")",
+      "Bash(timeout /t 5 /nobreak)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 17944\")"
     ],
     "deny": [],
     "ask": []

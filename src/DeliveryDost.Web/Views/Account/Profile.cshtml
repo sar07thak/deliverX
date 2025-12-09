@@ -20,7 +20,7 @@
                 @{
                     var roleBadgeClass = Model.Role switch
                     {
-                        "SuperAdmin" => "bg-danger",
+                        "Admin" => "bg-danger",
                         "DPCM" => "bg-purple",
                         "DP" => "bg-warning text-dark",
                         "BC" or "DBC" => "bg-info",
@@ -29,7 +29,7 @@
                     };
                     var roleDisplayName = Model.Role switch
                     {
-                        "SuperAdmin" => "ADMIN",
+                        "Admin" => "ADMIN",
                         "DPCM" => "MANAGER",
                         "DP" => "DELIVERY PARTNER",
                         "BC" or "DBC" => "BUSINESS",

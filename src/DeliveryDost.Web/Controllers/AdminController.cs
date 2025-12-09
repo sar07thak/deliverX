@@ -8,7 +8,7 @@ using DeliveryDost.Web.ViewModels.Admin;
 
 namespace DeliveryDost.Web.Controllers;
 
-[Authorize(Roles = "SuperAdmin")]
+[Authorize(Roles = "Admin")]
 public class AdminController : Controller
 {
     private readonly IDashboardService _dashboardService;
@@ -101,7 +101,7 @@ public class AdminController : Controller
     }
 
     [HttpGet]
-    public async Task<IActionResult> KycRequests(string? status = "PENDING", int page = 1)
+    public async Task<IActionResult> KycRequests(string? status = null, int page = 1)
     {
         try
         {
@@ -147,7 +147,6 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> ApproveKyc(Guid kycId)
     {
         try
@@ -168,7 +167,6 @@ public class AdminController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "SuperAdmin")]
     public async Task<IActionResult> RejectKyc(Guid kycId, string reason)
     {
         try

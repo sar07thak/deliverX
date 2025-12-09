@@ -90,8 +90,8 @@ public class AuthService : IAuthService
                     "DBC" => UserRole.DBC,
                     "DP" => UserRole.DP,
                     "DPCM" => UserRole.DPCM,
-                    "SA" => UserRole.SuperAdmin,
-                    "SUPERADMIN" => UserRole.SuperAdmin,
+                    "SA" => UserRole.Admin,
+                    "ADMIN" => UserRole.Admin,
                     _ => UserRole.EC
                 };
             }

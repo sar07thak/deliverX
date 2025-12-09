@@ -11,7 +11,7 @@ namespace DeliveryDost.API.Controllers;
 
 [ApiController]
 [Route("api/v1/admin")]
-[Authorize(Roles = "SuperAdmin,SA")]
+[Authorize(Roles = "Admin")]
 public class AdminController : ControllerBase
 {
     private readonly IDashboardService _dashboardService;

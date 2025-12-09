@@ -481,26 +481,34 @@ public class DpcmController : Controller
 
     private void LoadFromSession(DpcmRegistrationViewModel model)
     {
-        model.PersonalInfo.FullName = HttpContext.Session.GetString($"{SessionKey}_FullName") ?? model.PersonalInfo.FullName;
-        model.PersonalInfo.Email = HttpContext.Session.GetString($"{SessionKey}_Email") ?? model.PersonalInfo.Email;
+        // Helper to get session value only if model value is empty (preserve form data over session)
+        string GetSessionOrModel(string sessionKey, string? modelValue)
+        {
+            if (!string.IsNullOrEmpty(modelValue))
+                return modelValue;
+            return HttpContext.Session.GetString(sessionKey) ?? "";
+        }
+
+        model.PersonalInfo.FullName = GetSessionOrModel($"{SessionKey}_FullName", model.PersonalInfo.FullName);
+        model.PersonalInfo.Email = GetSessionOrModel($"{SessionKey}_Email", model.PersonalInfo.Email);
         var dobStr = HttpContext.Session.GetString($"{SessionKey}_DOB");
-        if (!string.IsNullOrEmpty(dobStr) && DateTime.TryParse(dobStr, out var dob))
+        if (!model.PersonalInfo.DOB.HasValue && !string.IsNullOrEmpty(dobStr) && DateTime.TryParse(dobStr, out var dob))
             model.PersonalInfo.DOB = dob;
-        model.PersonalInfo.Gender = HttpContext.Session.GetString($"{SessionKey}_Gender") ?? model.PersonalInfo.Gender;
-        model.PersonalInfo.AddressLine1 = HttpContext.Session.GetString($"{SessionKey}_AddressLine1") ?? model.PersonalInfo.AddressLine1;
-        model.PersonalInfo.AddressLine2 = HttpContext.Session.GetString($"{SessionKey}_AddressLine2") ?? model.PersonalInfo.AddressLine2;
-        model.PersonalInfo.City = HttpContext.Session.GetString($"{SessionKey}_City") ?? model.PersonalInfo.City;
-        model.PersonalInfo.State = HttpContext.Session.GetString($"{SessionKey}_State") ?? model.PersonalInfo.State;
-        model.PersonalInfo.Pincode = HttpContext.Session.GetString($"{SessionKey}_Pincode") ?? model.PersonalInfo.Pincode;
+        model.PersonalInfo.Gender = GetSessionOrModel($"{SessionKey}_Gender", model.PersonalInfo.Gender);
+        model.PersonalInfo.AddressLine1 = GetSessionOrModel($"{SessionKey}_AddressLine1", model.PersonalInfo.AddressLine1);
+        model.PersonalInfo.AddressLine2 = GetSessionOrModel($"{SessionKey}_AddressLine2", model.PersonalInfo.AddressLine2);
+        model.PersonalInfo.City = GetSessionOrModel($"{SessionKey}_City", model.PersonalInfo.City);
+        model.PersonalInfo.State = GetSessionOrModel($"{SessionKey}_State", model.PersonalInfo.State);
+        model.PersonalInfo.Pincode = GetSessionOrModel($"{SessionKey}_Pincode", model.PersonalInfo.Pincode);
 
-        model.BankDetails.AccountHolderName = HttpContext.Session.GetString($"{SessionKey}_AccountHolderName") ?? model.BankDetails.AccountHolderName;
-        model.BankDetails.AccountNumber = HttpContext.Session.GetString($"{SessionKey}_AccountNumber") ?? model.BankDetails.AccountNumber;
-        model.BankDetails.ConfirmAccountNumber = HttpContext.Session.GetString($"{SessionKey}_ConfirmAccountNumber") ?? model.BankDetails.ConfirmAccountNumber;
-        model.BankDetails.IFSCCode = HttpContext.Session.GetString($"{SessionKey}_IFSCCode") ?? model.BankDetails.IFSCCode;
-        model.BankDetails.BankName = HttpContext.Session.GetString($"{SessionKey}_BankName") ?? model.BankDetails.BankName;
-        model.BankDetails.BranchName = HttpContext.Session.GetString($"{SessionKey}_BranchName") ?? model.BankDetails.BranchName;
+        model.BankDetails.AccountHolderName = GetSessionOrModel($"{SessionKey}_AccountHolderName", model.BankDetails.AccountHolderName);
+        model.BankDetails.AccountNumber = GetSessionOrModel($"{SessionKey}_AccountNumber", model.BankDetails.AccountNumber);
+        model.BankDetails.ConfirmAccountNumber = GetSessionOrModel($"{SessionKey}_ConfirmAccountNumber", model.BankDetails.ConfirmAccountNumber);
+        model.BankDetails.IFSCCode = GetSessionOrModel($"{SessionKey}_IFSCCode", model.BankDetails.IFSCCode);
+        model.BankDetails.BankName = GetSessionOrModel($"{SessionKey}_BankName", model.BankDetails.BankName);
+        model.BankDetails.BranchName = GetSessionOrModel($"{SessionKey}_BranchName", model.BankDetails.BranchName);
 
-        model.KycDocuments.PAN = HttpContext.Session.GetString($"{SessionKey}_PAN") ?? model.KycDocuments.PAN;
+        model.KycDocuments.PAN = GetSessionOrModel($"{SessionKey}_PAN", model.KycDocuments.PAN);
     }
 
     private void ClearSession()

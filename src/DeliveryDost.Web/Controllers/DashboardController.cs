@@ -4,6 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 using DeliveryDost.Application.Services;
 using DeliveryDost.Application.DTOs.Delivery;
 using DeliveryDost.Application.DTOs.Wallet;
+using DeliveryDost.Infrastructure.Services;
 using DeliveryDost.Web.ViewModels.Dashboard;
 
 namespace DeliveryDost.Web.Controllers;
@@ -15,6 +16,7 @@ public class DashboardController : Controller
     private readonly IWalletService _walletService;
     private readonly IMatchingService _matchingService;
     private readonly IDashboardService _dashboardService;
+    private readonly IDPRegistrationService _registrationService;
     private readonly ILogger<DashboardController> _logger;
 
     public DashboardController(
@@ -22,12 +24,14 @@ public class DashboardController : Controller
         IWalletService walletService,
         IMatchingService matchingService,
         IDashboardService dashboardService,
+        IDPRegistrationService registrationService,
         ILogger<DashboardController> logger)
     {
         _deliveryService = deliveryService;
         _walletService = walletService;
         _matchingService = matchingService;
         _dashboardService = dashboardService;
+        _registrationService = registrationService;
         _logger = logger;
     }
 
@@ -43,7 +47,7 @@ public class DashboardController : Controller
             "DPCM" => RedirectToAction("Dpcm"),
             "BC" or "DBC" => RedirectToAction("Business"),
             "EC" => RedirectToAction("Consumer"),
-            "Admin" or "SuperAdmin" => RedirectToAction("Admin"),
+            "Admin" => RedirectToAction("Admin"),
             _ => View()
         };
     }
@@ -58,6 +62,10 @@ public class DashboardController : Controller
             var earnings = await _walletService.GetEarningsSummaryAsync(userId);
             var availability = await _matchingService.GetDPAvailabilityAsync(userId);
             var deliveries = await _deliveryService.GetDeliveriesAsync(null, userId, new DeliveryListRequest { PageSize = 5 });
+
+            // Get registration status
+            var kycStatus = await _registrationService.GetKYCStatusAsync(userId);
+            var isRegistered = kycStatus.OverallStatus == "FULLY_VERIFIED";
 
             var model = new DpDashboardViewModel
             {
@@ -85,7 +93,11 @@ public class DashboardController : Controller
                         Label = date.ToString("ddd"),
                         Value = (int)dayEarnings
                     };
-                }).ToList()
+                }).ToList(),
+                // Registration status
+                IsRegistered = isRegistered,
+                RegistrationStatus = kycStatus.OverallStatus,
+                KycStatus = kycStatus.OverallStatus
             };
 
             ViewData["Title"] = "DP Dashboard";
@@ -107,6 +119,10 @@ public class DashboardController : Controller
             // Fetch actual data from database service
             var dashboardData = await _dashboardService.GetDPCMDashboardAsync(userId, CancellationToken.None);
 
+            // Check DPCM registration status (if profile exists)
+            var isRegistered = dashboardData.Stats.TotalManagedDPs >= 0; // If we can fetch data, profile exists
+            var kycStatus = isRegistered ? "VERIFIED" : "NOT_STARTED";
+
             var model = new DpcmDashboardViewModel
             {
                 TotalDPs = dashboardData.Stats.TotalManagedDPs,
@@ -117,6 +133,7 @@ public class DashboardController : Controller
                 TotalDeliveries = dashboardData.Stats.TotalDeliveries,
                 MonthDeliveries = dashboardData.Stats.DeliveriesToday, // Using today's deliveries as monthly placeholder
                 AvgRating = dashboardData.Stats.AvgDPRating,
+                OpenComplaints = 0, // Placeholder - would need to fetch from complaint service
                 TopPerformers = dashboardData.ManagedDPs.Take(5).Select(dp => new DpSummaryItem
                 {
                     Name = dp.Name,
@@ -124,12 +141,17 @@ public class DashboardController : Controller
                     Rating = dp.Rating,
                     Earnings = 0 // DPSummaryDto doesn't have Earnings, using placeholder
                 }).ToList(),
+                RecentComplaints = new List<ComplaintSummaryItem>(), // Empty list - would fetch from complaint service
                 // Generate monthly chart data showing zeros - service doesn't provide monthly breakdown
                 MonthlyDeliveries = Enumerable.Range(1, 6).Select(i => new ChartDataPoint
                 {
                     Label = DateTime.Today.AddMonths(-5 + i).ToString("MMM"),
                     Value = i == 6 ? dashboardData.Stats.TotalDeliveries : 0 // Show current total in latest month
-                }).ToList()
+                }).ToList(),
+                // Registration status
+                IsRegistered = isRegistered,
+                RegistrationStatus = kycStatus,
+                KycStatus = kycStatus
             };
 
             ViewData["Title"] = "DPCM Dashboard";
@@ -141,11 +163,15 @@ public class DashboardController : Controller
             return View(new DpcmDashboardViewModel
             {
                 TopPerformers = new List<DpSummaryItem>(),
+                RecentComplaints = new List<ComplaintSummaryItem>(),
+                OpenComplaints = 0,
                 MonthlyDeliveries = Enumerable.Range(1, 6).Select(i => new ChartDataPoint
                 {
                     Label = DateTime.Today.AddMonths(-5 + i).ToString("MMM"),
                     Value = 0
-                }).ToList()
+                }).ToList(),
+                IsRegistered = false,
+                RegistrationStatus = "NOT_STARTED"
             });
         }
     }
@@ -158,6 +184,9 @@ public class DashboardController : Controller
         {
             var wallet = await _walletService.GetWalletAsync(userId);
             var deliveries = await _deliveryService.GetDeliveriesAsync(userId, null, new DeliveryListRequest { PageSize = 5 });
+
+            // For BC/DBC, registration is complete if they have a wallet
+            var isRegistered = wallet != null;
 
             var model = new BusinessDashboardViewModel
             {
@@ -174,7 +203,11 @@ public class DashboardController : Controller
                 DeliveriesByMonth = Enumerable.Range(1, 6).Select(i => new ChartDataPoint
                 {
                     Label = DateTime.Today.AddMonths(-5 + i).ToString("MMM"), Value = 20 + i * 10
-                }).ToList()
+                }).ToList(),
+                // Registration status
+                IsRegistered = isRegistered,
+                RegistrationStatus = isRegistered ? "VERIFIED" : "NOT_STARTED",
+                KycStatus = isRegistered ? "VERIFIED" : "NOT_STARTED"
             };
 
             ViewData["Title"] = "Business Dashboard";
@@ -196,6 +229,9 @@ public class DashboardController : Controller
             var wallet = await _walletService.GetWalletAsync(userId);
             var deliveries = await _deliveryService.GetDeliveriesAsync(userId, null, new DeliveryListRequest { PageSize = 5 });
 
+            // For EC, registration is complete if they have a wallet
+            var isRegistered = wallet != null;
+
             var model = new ConsumerDashboardViewModel
             {
                 WalletBalance = wallet?.Balance ?? 0,
@@ -206,7 +242,10 @@ public class DashboardController : Controller
                 {
                     Id = d.Id, Status = d.Status, DropAddress = d.DropAddress,
                     Price = d.EstimatedPrice, CreatedAt = d.CreatedAt
-                }).ToList()
+                }).ToList(),
+                // Registration status
+                IsRegistered = isRegistered,
+                RegistrationStatus = isRegistered ? "VERIFIED" : "NOT_STARTED"
             };
 
             ViewData["Title"] = "My Dashboard";
@@ -219,7 +258,7 @@ public class DashboardController : Controller
         }
     }
 
-    [Authorize(Roles = "Admin,SuperAdmin")]
+    [Authorize(Roles = "Admin")]
     public async Task<IActionResult> Admin()
     {
         try

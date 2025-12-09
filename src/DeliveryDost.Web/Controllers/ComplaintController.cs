@@ -180,7 +180,7 @@ public class ComplaintController : Controller
     #region Inspector Actions
 
     [HttpGet]
-    [Authorize(Roles = "Admin,SuperAdmin,Inspector")]
+    [Authorize(Roles = "Admin,Inspector")]
     public async Task<IActionResult> InspectorDashboard()
     {
         try
@@ -223,7 +223,7 @@ public class ComplaintController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,SuperAdmin,Inspector")]
+    [Authorize(Roles = "Admin,Inspector")]
     public async Task<IActionResult> AssignToMe(Guid complaintId)
     {
         try
@@ -241,7 +241,7 @@ public class ComplaintController : Controller
     }
 
     [HttpGet]
-    [Authorize(Roles = "Admin,SuperAdmin,Inspector")]
+    [Authorize(Roles = "Admin,Inspector")]
     public async Task<IActionResult> Resolve(Guid id)
     {
         var complaint = await _complaintService.GetComplaintAsync(id);
@@ -254,7 +254,7 @@ public class ComplaintController : Controller
 
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin,SuperAdmin,Inspector")]
+    [Authorize(Roles = "Admin,Inspector")]
     public async Task<IActionResult> Resolve(ResolveComplaintViewModel model)
     {
         if (!ModelState.IsValid) { ViewData["Title"] = "Resolve Complaint"; return View(model); }

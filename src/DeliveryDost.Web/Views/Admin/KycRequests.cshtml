@@ -20,8 +20,9 @@
                 <select name="status" class="form-select" onchange="this.form.submit()">
                     <option value="">All Status</option>
                     <option value="PENDING" selected="@(Model.StatusFilter == "PENDING")">Pending</option>
-                    <option value="APPROVED" selected="@(Model.StatusFilter == "APPROVED")">Approved</option>
+                    <option value="VERIFIED" selected="@(Model.StatusFilter == "VERIFIED")">Approved</option>
                     <option value="REJECTED" selected="@(Model.StatusFilter == "REJECTED")">Rejected</option>
+                    <option value="IN_PROGRESS" selected="@(Model.StatusFilter == "IN_PROGRESS")">In Progress</option>
                 </select>
             </div>
             <div class="col-md-4 d-flex align-items-end">
@@ -75,7 +76,7 @@
                                     <small>@request.SubmittedAt.ToString("dd MMM yyyy HH:mm")</small>
                                 </td>
                                 <td class="text-end">
-                                    @if (request.Status == "PENDING" && User.IsInRole("SuperAdmin"))
+                                    @if (request.Status == "PENDING" && User.IsInRole("Admin"))
                                     {
                                         <form asp-action="ApproveKyc" method="post" class="d-inline">
                                             @Html.AntiForgeryToken()
@@ -92,7 +93,7 @@
                                             <i class="bi bi-x-circle me-1"></i>Reject
                                         </button>
                                     }
-                                    @if (request.Status == "APPROVED")
+                                    @if (request.Status == "VERIFIED")
                                     {
                                         <span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Approved</span>
                                     }

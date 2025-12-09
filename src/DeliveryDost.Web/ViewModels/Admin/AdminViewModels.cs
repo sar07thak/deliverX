@@ -21,7 +21,7 @@ public class UserItemViewModel
 
     public string RoleBadgeClass => Role switch
     {
-        "SuperAdmin" => "bg-danger",
+        "Admin" => "bg-danger",
         "DPCM" => "bg-purple",
         "DP" => "bg-warning text-dark",
         "BC" or "DBC" => "bg-info",
@@ -31,7 +31,7 @@ public class UserItemViewModel
 
     public string RoleDisplayName => Role switch
     {
-        "SuperAdmin" => "Admin",
+        "Admin" => "Admin",
         "DPCM" => "Manager",
         "DP" => "Partner",
         "BC" or "DBC" => "Business",
@@ -64,6 +64,8 @@ public class KycRequestItemViewModel
     public string StatusBadgeClass => Status switch
     {
         "PENDING" => "bg-warning text-dark",
+        "IN_PROGRESS" => "bg-info",
+        "VERIFIED" => "bg-success",
         "APPROVED" => "bg-success",
         "REJECTED" => "bg-danger",
         _ => "bg-secondary"

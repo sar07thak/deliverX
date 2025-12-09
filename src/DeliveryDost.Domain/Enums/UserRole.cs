@@ -2,7 +2,7 @@ namespace DeliveryDost.Domain.Enums;
 
 public static class UserRole
 {
-    public const string SuperAdmin = "SuperAdmin";
+    public const string Admin = "Admin";
     public const string DPCM = "DPCM";
     public const string DP = "DP";
     public const string DBC = "DBC";
@@ -11,7 +11,7 @@ public static class UserRole
 
     public static readonly string[] AllRoles =
     {
-        SuperAdmin,
+        Admin,
         DPCM,
         DP,
         DBC,

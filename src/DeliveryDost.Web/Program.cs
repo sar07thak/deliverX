@@ -92,12 +92,12 @@ builder.Services.AddAuthentication(options =>
 builder.Services.AddAuthorization(options =>
 {
     // Role-based policies
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin", "SuperAdmin"));
-    options.AddPolicy("DPCMOnly", policy => policy.RequireRole("DPCM", "Admin", "SuperAdmin"));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
+    options.AddPolicy("DPCMOnly", policy => policy.RequireRole("DPCM", "Admin"));
     options.AddPolicy("DPOnly", policy => policy.RequireRole("DP"));
     options.AddPolicy("BCOnly", policy => policy.RequireRole("BC", "DBC"));
     options.AddPolicy("ECOnly", policy => policy.RequireRole("EC"));
-    options.AddPolicy("InspectorOnly", policy => policy.RequireRole("Inspector", "Admin", "SuperAdmin"));
+    options.AddPolicy("InspectorOnly", policy => policy.RequireRole("Inspector", "Admin"));
 });
 
 // ===========================================

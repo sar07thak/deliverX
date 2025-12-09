@@ -7,7 +7,7 @@ public class User
     public string? Email { get; set; }
     public string? FullName { get; set; }
     public string? PasswordHash { get; set; }
-    public string Role { get; set; } = string.Empty; // DP, DPCM, DBC, EC, Inspector, SuperAdmin
+    public string Role { get; set; } = string.Empty; // DP, DPCM, DBC, EC, Admin
     public bool Is2FAEnabled { get; set; } = false;
     public string? TotpSecret { get; set; } // Encrypted
     public bool IsActive { get; set; } = true;

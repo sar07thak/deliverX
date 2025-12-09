@@ -10,6 +10,11 @@ public class DpRegistrationViewModel
     public int CurrentStep { get; set; } = 1;
     public int TotalSteps { get; } = 5;
 
+    // DPCM Referral Code (optional - links DP to Channel Manager)
+    [Display(Name = "DPCM Referral Code")]
+    [RegularExpression(@"^DPCM[A-Z0-9]{8}$", ErrorMessage = "Invalid referral code format (e.g., DPCM12345678)")]
+    public string? DPCMReferralCode { get; set; }
+
     // Step 1: Personal Info
     public PersonalInfoStepViewModel PersonalInfo { get; set; } = new();
 

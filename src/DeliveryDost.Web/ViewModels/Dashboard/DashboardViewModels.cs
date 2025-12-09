@@ -15,6 +15,11 @@ public class DpDashboardViewModel
     public int TotalDeliveries { get; set; }
     public List<RecentDeliveryItem> RecentDeliveries { get; set; } = new();
     public List<ChartDataPoint> WeeklyEarnings { get; set; } = new();
+
+    // Registration Status
+    public bool IsRegistered { get; set; }
+    public string RegistrationStatus { get; set; } = "NOT_STARTED";
+    public string? KycStatus { get; set; }
 }
 
 public class DpcmDashboardViewModel
@@ -27,10 +32,31 @@ public class DpcmDashboardViewModel
     public int TotalDeliveries { get; set; }
     public int MonthDeliveries { get; set; }
     public decimal AvgRating { get; set; }
+    public int OpenComplaints { get; set; }
     public List<DpSummaryItem> TopPerformers { get; set; } = new();
     public List<DpSummaryItem> RecentDPs { get; set; } = new();
     public List<ChartDataPoint> MonthlyDeliveries { get; set; } = new();
     public List<ChartDataPoint> RevenueByMonth { get; set; } = new();
+    public List<ComplaintSummaryItem> RecentComplaints { get; set; } = new();
+
+    // Registration Status
+    public bool IsRegistered { get; set; }
+    public string RegistrationStatus { get; set; } = "NOT_STARTED";
+    public string? KycStatus { get; set; }
+}
+
+public class ComplaintSummaryItem
+{
+    public Guid Id { get; set; }
+    public string TicketNumber { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string Priority { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public string StatusBadgeClass => Status switch
+    {
+        "RESOLVED" => "bg-success", "IN_PROGRESS" => "bg-info", "ESCALATED" => "bg-danger", _ => "bg-warning"
+    };
 }
 
 public class AdminDashboardViewModel
@@ -67,6 +93,10 @@ public class ConsumerDashboardViewModel
     public int CompletedDeliveries { get; set; }
     public decimal TotalSpent { get; set; }
     public List<RecentDeliveryItem> RecentDeliveries { get; set; } = new();
+
+    // Registration Status
+    public bool IsRegistered { get; set; }
+    public string RegistrationStatus { get; set; } = "NOT_STARTED";
 }
 
 public class BusinessDashboardViewModel : ConsumerDashboardViewModel
@@ -74,6 +104,7 @@ public class BusinessDashboardViewModel : ConsumerDashboardViewModel
     public int MonthDeliveries { get; set; }
     public decimal MonthSpent { get; set; }
     public List<ChartDataPoint> DeliveriesByMonth { get; set; } = new();
+    public string? KycStatus { get; set; }
 }
 
 public class RecentDeliveryItem

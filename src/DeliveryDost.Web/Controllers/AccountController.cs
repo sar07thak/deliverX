@@ -159,7 +159,7 @@ public class AccountController : Controller
                 {
                     return RedirectToAction("Register", controller);
                 }
-                // For EC/BC/SuperAdmin - no special registration, go to dashboard
+                // For EC/BC/Admin - no special registration, go to dashboard
             }
 
             if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
@@ -256,6 +256,6 @@ public class AccountController : Controller
         "DPCM" => "Dpcm",
         "BC" => "Bc",  // Business Consumer registration with subscription
         "DBC" => "Bc", // Digital Business Consumer also uses BC registration
-        _ => null  // EC, SuperAdmin go directly to dashboard
+        _ => null  // EC, Admin go directly to dashboard
     };
 }

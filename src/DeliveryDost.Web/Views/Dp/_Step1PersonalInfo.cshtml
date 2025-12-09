@@ -6,6 +6,27 @@
     @Html.AntiForgeryToken()
     <input type="hidden" asp-for="CurrentStep" />
 
+    <!-- DPCM Referral Code (optional) -->
+    <div class="mb-4 p-3 bg-light rounded">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <label asp-for="DPCMReferralCode" class="form-label">
+                    <i class="bi bi-gift me-1"></i>DPCM Referral Code (Optional)
+                </label>
+                <input asp-for="DPCMReferralCode" class="form-control" placeholder="e.g., DPCM12345678" style="text-transform: uppercase;" maxlength="12" />
+                <span asp-validation-for="DPCMReferralCode" class="text-danger"></span>
+                <small class="text-muted">Enter if you were referred by a Channel Manager</small>
+            </div>
+            <div class="col-md-6">
+                <div class="text-muted small mt-3 mt-md-0">
+                    <i class="bi bi-info-circle me-1"></i>
+                    If you have a referral code from a DPCM (Delivery Partner Channel Manager),
+                    enter it here to link your account to them.
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-md-6">
             <div class="mb-3">

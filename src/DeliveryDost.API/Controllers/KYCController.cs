@@ -304,7 +304,7 @@ public class KYCController : ControllerBase
                 return Unauthorized();
 
             // Users can only check their own status (unless admin)
-            if (userId != tokenUserId && !User.IsInRole("SuperAdmin"))
+            if (userId != tokenUserId && !User.IsInRole("Admin"))
             {
                 return Forbid();
             }

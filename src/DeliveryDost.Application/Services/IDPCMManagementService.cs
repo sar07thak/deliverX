@@ -7,7 +7,7 @@ namespace DeliveryDost.Application.Services;
 
 /// <summary>
 /// Service for DPCM (Delivery Partner Cluster Manager) management
-/// - Manual registration by SuperAdmin
+/// - Manual registration by Admin
 /// - Pincode-DPCM mapping (One Pincode = One DPCM)
 /// - Commission configuration
 /// </summary>
@@ -16,7 +16,7 @@ public interface IDPCMManagementService
     #region DPCM Registration (Admin Only)
 
     /// <summary>
-    /// Manually register a new DPCM (SuperAdmin only)
+    /// Manually register a new DPCM (Admin only)
     /// Creates user, DPCM profile, and assigns pincodes
     /// </summary>
     Task<CreateDPCMResponse> CreateDPCMAsync(CreateDPCMRequest request, Guid adminUserId, CancellationToken cancellationToken);

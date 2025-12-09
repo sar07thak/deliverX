@@ -3,7 +3,7 @@ namespace DeliveryDost.Domain.Entities;
 public class RolePermission
 {
     public Guid Id { get; set; }
-    public string Role { get; set; } = string.Empty; // DP, DPCM, DBC, EC, Inspector, SuperAdmin
+    public string Role { get; set; } = string.Empty; // DP, DPCM, DBC, EC, Admin
     public Guid PermissionId { get; set; }
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 

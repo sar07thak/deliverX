@@ -306,6 +306,7 @@ public class DpController : Controller
                 DOB = model.PersonalInfo.DOB ?? DateTime.MinValue,
                 Gender = model.PersonalInfo.Gender,
                 ProfilePhotoUrl = model.PersonalInfo.ProfilePhotoUrl,
+                DPCMReferralCode = model.DPCMReferralCode, // Link to DPCM if referral code provided
                 Address = new AddressDto
                 {
                     Line1 = model.PersonalInfo.AddressLine1,
@@ -477,6 +478,9 @@ public class DpController : Controller
     {
         HttpContext.Session.SetString($"{SessionKey}_Step", model.CurrentStep.ToString());
 
+        // DPCM Referral Code
+        HttpContext.Session.SetString($"{SessionKey}_DPCMReferralCode", model.DPCMReferralCode ?? "");
+
         // Personal Info
         HttpContext.Session.SetString($"{SessionKey}_FullName", model.PersonalInfo.FullName ?? "");
         HttpContext.Session.SetString($"{SessionKey}_Email", model.PersonalInfo.Email ?? "");
@@ -523,6 +527,10 @@ public class DpController : Controller
             var sessionValue = HttpContext.Session.GetString($"{SessionKey}_{key}");
             return !string.IsNullOrEmpty(sessionValue) ? sessionValue : currentValue;
         }
+
+        // DPCM Referral Code
+        model.DPCMReferralCode = GetSessionOrKeep("DPCMReferralCode", model.DPCMReferralCode ?? "");
+        if (string.IsNullOrEmpty(model.DPCMReferralCode)) model.DPCMReferralCode = null;
 
         // Personal Info
         model.PersonalInfo.FullName = GetSessionOrKeep("FullName", model.PersonalInfo.FullName);
@@ -573,7 +581,7 @@ public class DpController : Controller
     {
         var keys = new[]
         {
-            "Step", "FullName", "Email", "DOB", "Gender",
+            "Step", "DPCMReferralCode", "FullName", "Email", "DOB", "Gender",
             "AddressLine1", "AddressLine2", "City", "State", "Pincode",
             "VehicleType", "VehicleNumber",
             "AccountHolderName", "AccountNumber", "ConfirmAccountNumber", "IFSCCode", "BankName", "BranchName",

@@ -116,7 +116,7 @@ PRINT 'Creating test users...'
 
 -- Define GUIDs for test users
 DECLARE @AdminUserId UNIQUEIDENTIFIER = NEWID();
-DECLARE @SuperAdminUserId UNIQUEIDENTIFIER = NEWID();
+DECLARE @Admin2UserId UNIQUEIDENTIFIER = NEWID();
 DECLARE @DPCMUser1Id UNIQUEIDENTIFIER = NEWID();
 DECLARE @DPCMUser2Id UNIQUEIDENTIFIER = NEWID();
 DECLARE @DPUser1Id UNIQUEIDENTIFIER = NEWID();
@@ -131,13 +131,13 @@ DECLARE @DBCUser1Id UNIQUEIDENTIFIER = NEWID();
 -- INSERT TEST USERS
 -- ============================================
 
--- SuperAdmin (with completed profile)
+-- Admin 1 (with completed profile)
 INSERT INTO Users (Id, Phone, Email, FullName, PasswordHash, Role, Is2FAEnabled, IsActive, IsEmailVerified, IsPhoneVerified, FailedLoginAttempts, CreatedAt, UpdatedAt)
-VALUES (@SuperAdminUserId, '9999999999', 'superadmin@deliverydost.com', 'Super Admin', NULL, 'SuperAdmin', 0, 1, 0, 1, 0, GETUTCDATE(), GETUTCDATE());
+VALUES (@AdminUserId, '9999999999', 'admin@deliverydost.com', 'System Admin', NULL, 'Admin', 0, 1, 0, 1, 0, GETUTCDATE(), GETUTCDATE());
 
--- Admin (with completed profile)
+-- Admin 2 (with completed profile)
 INSERT INTO Users (Id, Phone, Email, FullName, PasswordHash, Role, Is2FAEnabled, IsActive, IsEmailVerified, IsPhoneVerified, FailedLoginAttempts, CreatedAt, UpdatedAt)
-VALUES (@AdminUserId, '9999999998', 'admin@deliverydost.com', 'Test Admin', NULL, 'Admin', 0, 1, 0, 1, 0, GETUTCDATE(), GETUTCDATE());
+VALUES (@Admin2UserId, '9999999998', 'admin2@deliverydost.com', 'Test Admin', NULL, 'Admin', 0, 1, 0, 1, 0, GETUTCDATE(), GETUTCDATE());
 
 -- ============================================
 -- DPCM Users
@@ -213,8 +213,8 @@ VALUES (@DBCUser1Id, '9500000001', NULL, NULL, NULL, 'DBC', 0, 1, 0, 1, 0, GETUT
 
 INSERT INTO Wallets (Id, UserId, Balance, HoldBalance, Currency, WalletType, IsActive, CreatedAt, UpdatedAt)
 VALUES
-    (NEWID(), @SuperAdminUserId, 100000, 0, 'INR', 'MAIN', 1, GETUTCDATE(), GETUTCDATE()),
-    (NEWID(), @AdminUserId, 50000, 0, 'INR', 'MAIN', 1, GETUTCDATE(), GETUTCDATE()),
+    (NEWID(), @AdminUserId, 100000, 0, 'INR', 'MAIN', 1, GETUTCDATE(), GETUTCDATE()),
+    (NEWID(), @Admin2UserId, 50000, 0, 'INR', 'MAIN', 1, GETUTCDATE(), GETUTCDATE()),
     (NEWID(), @DPCMUser2Id, 10000, 0, 'INR', 'MAIN', 1, GETUTCDATE(), GETUTCDATE()),
     (NEWID(), @DPUser3Id, 5000, 0, 'INR', 'MAIN', 1, GETUTCDATE(), GETUTCDATE()),
     (NEWID(), @BCUser2Id, 25000, 0, 'INR', 'MAIN', 1, GETUTCDATE(), GETUTCDATE());
@@ -230,7 +230,7 @@ PRINT 'TEST ACCOUNTS CREATED'
 PRINT '============================================'
 PRINT ''
 PRINT '--- ADMIN ACCOUNTS (Profile Complete) ---'
-PRINT 'SuperAdmin: 9999999999'
+PRINT 'Admin: 9999999999'
 PRINT 'Admin: 9999999998'
 PRINT ''
 PRINT '--- DPCM ACCOUNTS ---'
