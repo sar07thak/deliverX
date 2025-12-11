@@ -24,7 +24,8 @@
       "Bash(cmd.exe /c \"taskkill /F /PID 19188\")",
       "Bash(cmd.exe /c \"taskkill /F /PID 28680\")",
       "Bash(timeout /t 5 /nobreak)",
-      "Bash(cmd.exe /c \"taskkill /F /PID 17944\")"
+      "Bash(cmd.exe /c \"taskkill /F /PID 17944\")",
+      "WebFetch(domain:localhost)"
     ],
     "deny": [],
     "ask": []
