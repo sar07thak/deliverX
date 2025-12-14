@@ -111,3 +111,96 @@ public class ComplaintSLAConfig
     public bool IsActive { get; set; } = true;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }
+
+/// <summary>
+/// Field visit scheduled by inspector for investigation
+/// </summary>
+public class FieldVisit
+{
+    public Guid Id { get; set; }
+    public Guid ComplaintId { get; set; }
+    public Guid InspectorId { get; set; }
+    public DateTime ScheduledAt { get; set; }
+    public DateTime? StartedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string Status { get; set; } = "SCHEDULED"; // SCHEDULED, IN_PROGRESS, COMPLETED, CANCELLED
+    public string? Address { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Notes { get; set; }
+    public string? CancellationReason { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    public Complaint? Complaint { get; set; }
+    public Inspector? Inspector { get; set; }
+    public ICollection<FieldVisitEvidence> Evidences { get; set; } = new List<FieldVisitEvidence>();
+}
+
+/// <summary>
+/// Evidence collected during field visit (photos, GPS, etc.)
+/// </summary>
+public class FieldVisitEvidence
+{
+    public Guid Id { get; set; }
+    public Guid FieldVisitId { get; set; }
+    public string Type { get; set; } = string.Empty; // PHOTO, GPS_LOCATION, SIGNATURE, AUDIO, VIDEO
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Description { get; set; }
+    public DateTime CapturedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    public FieldVisit? FieldVisit { get; set; }
+}
+
+/// <summary>
+/// Investigation report and verdict for a complaint
+/// </summary>
+public class InvestigationReport
+{
+    public Guid Id { get; set; }
+    public Guid ComplaintId { get; set; }
+    public Guid InspectorId { get; set; }
+    public string Findings { get; set; } = string.Empty;
+    public string Verdict { get; set; } = string.Empty; // VALID, INVALID, PARTIALLY_VALID, INCONCLUSIVE
+    public string? VerdictReason { get; set; }
+    public string? RecommendedAction { get; set; } // REFUND, COMPENSATION, WARNING, SUSPENSION, NO_ACTION
+    public decimal? CompensationAmount { get; set; }
+    public string? PenaltyType { get; set; } // WARNING, FINE, SUSPENSION, TERMINATION
+    public decimal? PenaltyAmount { get; set; }
+    public Guid? PenaltyAppliedToId { get; set; } // User who gets penalized
+    public bool IsApproved { get; set; }
+    public Guid? ApprovedById { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+    // Navigation
+    public Complaint? Complaint { get; set; }
+    public Inspector? Inspector { get; set; }
+    public User? ApprovedBy { get; set; }
+}
+
+/// <summary>
+/// SLA breach tracking for complaints
+/// </summary>
+public class SLABreach
+{
+    public Guid Id { get; set; }
+    public Guid ComplaintId { get; set; }
+    public string BreachType { get; set; } = string.Empty; // RESPONSE_TIME, RESOLUTION_TIME
+    public int ExpectedHours { get; set; }
+    public int ActualHours { get; set; }
+    public DateTime BreachedAt { get; set; } = DateTime.UtcNow;
+    public bool IsEscalated { get; set; }
+    public Guid? EscalatedToId { get; set; }
+    public DateTime? EscalatedAt { get; set; }
+
+    // Navigation
+    public Complaint? Complaint { get; set; }
+    public User? EscalatedTo { get; set; }
+}

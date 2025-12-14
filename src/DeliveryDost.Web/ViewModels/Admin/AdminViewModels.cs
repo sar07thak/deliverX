@@ -109,3 +109,96 @@ public class ComplaintItemViewModel
         _ => "bg-secondary"
     };
 }
+
+// ===================================================
+// STAKEHOLDER ONBOARDING VIEW MODELS
+// ===================================================
+
+public class StakeholderOnboardingViewModel
+{
+    public DeliveryDost.Application.DTOs.Dashboard.OnboardingStatsDto Stats { get; set; } = new();
+    public List<DeliveryDost.Application.DTOs.Dashboard.AvailableDPCMDto> AvailableDPCMs { get; set; } = new();
+}
+
+public class RegisterStakeholderViewModel
+{
+    // Basic Info (Required)
+    public string Phone { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+
+    // Address
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? Pincode { get; set; }
+
+    // Business Details (for BC/DPCM)
+    public string? BusinessName { get; set; }
+    public string? BusinessType { get; set; }
+    public string? GSTIN { get; set; }
+    public string? BusinessPAN { get; set; }
+
+    // DPCM Specific
+    public string? CommissionType { get; set; }
+    public decimal? CommissionValue { get; set; }
+    public decimal? SecurityDeposit { get; set; }
+    public string? ServiceRegions { get; set; } // Comma-separated
+
+    // DP Specific
+    public Guid? DPCMId { get; set; }
+    public string? VehicleType { get; set; }
+    public string? VehicleNumber { get; set; }
+    public string? ServicePincodes { get; set; } // Comma-separated
+
+    // Options
+    public bool SendWelcomeSms { get; set; } = true;
+    public bool AutoCreateWallet { get; set; } = true;
+    public bool SkipKYC { get; set; } = false;
+    public string? Notes { get; set; }
+}
+
+public class StakeholdersListViewModel
+{
+    public List<DeliveryDost.Application.DTOs.Dashboard.StakeholderListItemDto> Stakeholders { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public int TotalPages { get; set; }
+    public string? RoleFilter { get; set; }
+    public string? StatusFilter { get; set; }
+    public string? SearchTerm { get; set; }
+
+    // Summary counts
+    public int TotalDPCMs { get; set; }
+    public int TotalDPs { get; set; }
+    public int TotalBCs { get; set; }
+    public int TotalECs { get; set; }
+    public int PendingKYC { get; set; }
+
+    public string GetRoleBadgeClass(string role) => role switch
+    {
+        "Admin" => "bg-danger",
+        "DPCM" => "bg-purple",
+        "DP" => "bg-warning text-dark",
+        "BC" or "DBC" => "bg-info",
+        "EC" => "bg-success",
+        _ => "bg-secondary"
+    };
+
+    public string GetStatusBadgeClass(string status) => status switch
+    {
+        "Active" => "bg-success",
+        "Inactive" => "bg-danger",
+        _ => "bg-secondary"
+    };
+
+    public string GetKYCBadgeClass(string kycStatus) => kycStatus switch
+    {
+        "VERIFIED" => "bg-success",
+        "PENDING" => "bg-warning text-dark",
+        "REJECTED" => "bg-danger",
+        _ => "bg-secondary"
+    };
+}

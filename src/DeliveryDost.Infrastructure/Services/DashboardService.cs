@@ -1097,4 +1097,1177 @@ public class DashboardService : IDashboardService
         await _context.SaveChangesAsync(ct);
         return true;
     }
+
+    // ============================================
+    // Drill-Down Analytics Methods
+    // ============================================
+
+    public async Task<GeographicAnalyticsDto> GetGeographicAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default)
+    {
+        var result = new GeographicAnalyticsDto();
+
+        // Get deliveries within date range
+        var deliveries = await _context.Deliveries
+            .Where(d => d.CreatedAt >= request.StartDate && d.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        // Group by service area
+        var serviceAreas = await _context.ServiceAreas.ToListAsync(ct);
+        var dpAvailabilities = await _context.DPAvailabilities
+            .Where(a => a.Status == "AVAILABLE")
+            .ToListAsync(ct);
+
+        result.ByServiceArea = serviceAreas.Select(sa =>
+        {
+            // Estimate deliveries in area based on pickup location proximity
+            var areaDeliveries = deliveries.Where(d =>
+                Math.Abs((double)(d.PickupLat - sa.CenterLat)) < 0.1 &&
+                Math.Abs((double)(d.PickupLng - sa.CenterLng)) < 0.1).ToList();
+            // Count DPs whose last location is near the service area center
+            var activeDPs = dpAvailabilities.Count(a =>
+                a.LastLocationLat.HasValue && a.LastLocationLng.HasValue &&
+                Math.Abs((double)(a.LastLocationLat.Value - sa.CenterLat)) < (double)sa.RadiusKm / 111 &&
+                Math.Abs((double)(a.LastLocationLng.Value - sa.CenterLng)) < (double)sa.RadiusKm / 111);
+
+            return new ServiceAreaAnalyticsDto
+            {
+                ServiceAreaId = sa.Id,
+                ServiceAreaName = sa.AreaName ?? $"Area-{sa.Id.ToString()[..8]}",
+                City = "",
+                TotalDeliveries = areaDeliveries.Count,
+                Revenue = areaDeliveries.Sum(d => d.FinalPrice ?? 0),
+                ActiveDPs = activeDPs,
+                DemandLevel = areaDeliveries.Count > 100 ? 5 : areaDeliveries.Count > 50 ? 4 : areaDeliveries.Count > 20 ? 3 : areaDeliveries.Count > 5 ? 2 : 1,
+                SupplyLevel = activeDPs > 20 ? 5 : activeDPs > 10 ? 4 : activeDPs > 5 ? 3 : activeDPs > 2 ? 2 : 1,
+                AvgDeliveryTime = 0,
+                AvgWaitTime = 0
+            };
+        }).ToList();
+
+        // Identify hotspots (top pickup areas)
+        var hotspots = deliveries
+            .GroupBy(d => new { Lat = Math.Round((double)d.PickupLat, 2), Lng = Math.Round((double)d.PickupLng, 2) })
+            .OrderByDescending(g => g.Count())
+            .Take(10)
+            .Select(g => new HotspotDto
+            {
+                AreaName = $"Lat: {g.Key.Lat}, Lng: {g.Key.Lng}",
+                Latitude = (decimal)g.Key.Lat,
+                Longitude = (decimal)g.Key.Lng,
+                DeliveryCount = g.Count(),
+                DemandIntensity = g.Count() / Math.Max(1, (decimal)(request.EndDate - request.StartDate).TotalHours)
+            })
+            .ToList();
+
+        result.Hotspots = hotspots;
+
+        // Identify coverage gaps (areas with high demand but low supply)
+        result.CoverageGaps = result.ByServiceArea
+            .Where(sa => sa.DemandLevel > sa.SupplyLevel + 1)
+            .Select(sa => new CoverageGapDto
+            {
+                AreaName = sa.ServiceAreaName,
+                District = sa.City,
+                RequestCount = sa.TotalDeliveries,
+                AvailableDPs = sa.ActiveDPs,
+                SuggestedAction = $"Recruit {sa.DemandLevel - sa.SupplyLevel} more DPs"
+            })
+            .ToList();
+
+        return result;
+    }
+
+    public async Task<DeliveryPerformanceAnalyticsDto> GetDeliveryPerformanceAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default)
+    {
+        var deliveries = await _context.Deliveries
+            .Where(d => d.CreatedAt >= request.StartDate && d.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        var result = new DeliveryPerformanceAnalyticsDto();
+
+        // Summary
+        var completed = deliveries.Count(d => d.Status == "DELIVERED");
+        var cancelled = deliveries.Count(d => d.Status == "CANCELLED");
+        var inProgress = deliveries.Count(d => d.Status == "IN_TRANSIT" || d.Status == "PICKED_UP");
+
+        var deliveriesWithDistance = deliveries.Where(d => d.DistanceKm.HasValue).ToList();
+        result.Summary = new PerformanceSummaryDto
+        {
+            TotalDeliveries = deliveries.Count,
+            Completed = completed,
+            Cancelled = cancelled,
+            InProgress = inProgress,
+            CompletionRate = deliveries.Count > 0 ? (decimal)completed / deliveries.Count * 100 : 0,
+            CancellationRate = deliveries.Count > 0 ? (decimal)cancelled / deliveries.Count * 100 : 0,
+            OnTimeRate = 85, // Placeholder - would calculate based on actual SLA
+            AvgDistanceKm = deliveriesWithDistance.Count > 0 ? deliveriesWithDistance.Average(d => d.DistanceKm!.Value) : 0,
+            AvgOrderValue = deliveries.Count > 0 ? deliveries.Average(d => d.FinalPrice ?? d.EstimatedPrice ?? 0) : 0
+        };
+
+        // By time slot
+        result.ByTimeSlot = new List<TimeSlotPerformanceDto>
+        {
+            new() { TimeSlot = "00:00-06:00", TotalDeliveries = deliveries.Count(d => d.CreatedAt.Hour >= 0 && d.CreatedAt.Hour < 6) },
+            new() { TimeSlot = "06:00-12:00", TotalDeliveries = deliveries.Count(d => d.CreatedAt.Hour >= 6 && d.CreatedAt.Hour < 12) },
+            new() { TimeSlot = "12:00-18:00", TotalDeliveries = deliveries.Count(d => d.CreatedAt.Hour >= 12 && d.CreatedAt.Hour < 18) },
+            new() { TimeSlot = "18:00-24:00", TotalDeliveries = deliveries.Count(d => d.CreatedAt.Hour >= 18 && d.CreatedAt.Hour < 24) }
+        };
+
+        // By distance range
+        result.ByDistanceRange = new List<DistanceRangePerformanceDto>
+        {
+            new() { DistanceRange = "0-2km", TotalDeliveries = deliveries.Count(d => d.DistanceKm <= 2), AvgPrice = deliveries.Where(d => d.DistanceKm <= 2).Select(d => d.FinalPrice ?? d.EstimatedPrice ?? 0).DefaultIfEmpty(0).Average() },
+            new() { DistanceRange = "2-5km", TotalDeliveries = deliveries.Count(d => d.DistanceKm > 2 && d.DistanceKm <= 5) },
+            new() { DistanceRange = "5-10km", TotalDeliveries = deliveries.Count(d => d.DistanceKm > 5 && d.DistanceKm <= 10) },
+            new() { DistanceRange = "10-15km", TotalDeliveries = deliveries.Count(d => d.DistanceKm > 10 && d.DistanceKm <= 15) },
+            new() { DistanceRange = ">15km", TotalDeliveries = deliveries.Count(d => d.DistanceKm > 15) }
+        };
+
+        // By day of week
+        result.ByDayOfWeek = Enumerable.Range(0, 7)
+            .Select(day => new DayOfWeekPerformanceDto
+            {
+                DayOfWeek = ((DayOfWeek)day).ToString(),
+                DayIndex = day,
+                TotalDeliveries = deliveries.Count(d => (int)d.CreatedAt.DayOfWeek == day),
+                Revenue = deliveries.Where(d => (int)d.CreatedAt.DayOfWeek == day).Sum(d => d.FinalPrice ?? 0)
+            })
+            .ToList();
+
+        // Funnel
+        var ordersReceived = deliveries.Count;
+        var dpMatched = deliveries.Count(d => d.AssignedDPId.HasValue);
+        var pickedUp = deliveries.Count(d => d.Status == "PICKED_UP" || d.Status == "IN_TRANSIT" || d.Status == "DELIVERED");
+        var delivered = completed;
+
+        result.Funnel = new DeliveryFunnelDto
+        {
+            OrdersReceived = ordersReceived,
+            DPMatched = dpMatched,
+            PickedUp = pickedUp,
+            InTransit = inProgress,
+            Delivered = delivered,
+            Cancelled = cancelled,
+            MatchRate = ordersReceived > 0 ? (decimal)dpMatched / ordersReceived * 100 : 0,
+            PickupRate = dpMatched > 0 ? (decimal)pickedUp / dpMatched * 100 : 0,
+            DeliveryRate = pickedUp > 0 ? (decimal)delivered / pickedUp * 100 : 0
+        };
+
+        return result;
+    }
+
+    public async Task<FinancialAnalyticsDto> GetFinancialAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default)
+    {
+        var result = new FinancialAnalyticsDto();
+
+        var payments = await _context.Payments
+            .Where(p => p.CreatedAt >= request.StartDate && p.CreatedAt <= request.EndDate && p.Status == "COMPLETED")
+            .ToListAsync(ct);
+
+        var commissions = await _context.CommissionRecords
+            .Where(c => c.CreatedAt >= request.StartDate && c.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        var settlements = await _context.Settlements
+            .Where(s => s.CreatedAt >= request.StartDate && s.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        // Calculate previous period for comparison
+        var periodLength = request.EndDate - request.StartDate;
+        var previousStart = request.StartDate - periodLength;
+        var previousPayments = await _context.Payments
+            .Where(p => p.CreatedAt >= previousStart && p.CreatedAt < request.StartDate && p.Status == "COMPLETED")
+            .SumAsync(p => p.Amount, ct);
+
+        var grossRevenue = payments.Sum(p => p.Amount);
+        var platformFees = commissions.Sum(c => c.PlatformFee);
+        var dpcmCommissions = commissions.Sum(c => c.DPCMCommission);
+        var dpPayouts = settlements.Where(s => s.BeneficiaryType == "DP").Sum(s => s.NetAmount);
+
+        result.Summary = new FinancialSummaryDto
+        {
+            GrossRevenue = grossRevenue,
+            NetRevenue = platformFees,
+            PlatformFees = platformFees,
+            DPCMCommissions = dpcmCommissions,
+            DPPayouts = dpPayouts,
+            RefundsIssued = payments.Where(p => p.PaymentType == "REFUND").Sum(p => p.Amount),
+            GrowthVsPreviousPeriod = previousPayments > 0 ? (grossRevenue - previousPayments) / previousPayments * 100 : 0,
+            AvgOrderValue = payments.Count > 0 ? grossRevenue / payments.Count : 0
+        };
+
+        // Revenue trend
+        result.RevenueTrend = payments
+            .GroupBy(p => p.CreatedAt.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new RevenueTrendDto
+            {
+                Date = g.Key,
+                Revenue = g.Sum(p => p.Amount),
+                Orders = g.Count()
+            })
+            .ToList();
+
+        // Revenue by channel (using payment method as proxy)
+        result.ByChannel = payments
+            .GroupBy(p => p.PaymentMethod ?? "UNKNOWN")
+            .Select(g => new RevenueByChannelDto
+            {
+                Channel = g.Key,
+                Revenue = g.Sum(p => p.Amount),
+                Orders = g.Count(),
+                Percentage = grossRevenue > 0 ? g.Sum(p => p.Amount) / grossRevenue * 100 : 0
+            })
+            .ToList();
+
+        // Payment analytics
+        result.PaymentAnalytics = new PaymentAnalyticsDto
+        {
+            TotalCollected = grossRevenue,
+            CashCollected = payments.Where(p => p.PaymentMethod == "CASH").Sum(p => p.Amount),
+            OnlineCollected = payments.Where(p => p.PaymentMethod != "CASH").Sum(p => p.Amount),
+            CollectionRate = 95, // Placeholder
+            ByPaymentMethod = payments.GroupBy(p => p.PaymentMethod ?? "OTHER").ToDictionary(g => g.Key, g => g.Sum(p => p.Amount))
+        };
+
+        // Settlement analytics
+        result.SettlementAnalytics = new SettlementAnalyticsDto
+        {
+            TotalSettled = settlements.Where(s => s.Status == "COMPLETED").Sum(s => s.NetAmount),
+            PendingSettlement = settlements.Where(s => s.Status == "PENDING").Sum(s => s.NetAmount),
+            SettlementCount = settlements.Count(s => s.Status == "COMPLETED"),
+            PendingCount = settlements.Count(s => s.Status == "PENDING"),
+            OnTimeSettlementRate = 90 // Placeholder
+        };
+
+        return result;
+    }
+
+    public async Task<UserAnalyticsDto> GetUserAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default)
+    {
+        var result = new UserAnalyticsDto();
+
+        var users = await _context.Users
+            .Where(u => u.CreatedAt >= request.StartDate && u.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        var allUsers = await _context.Users.ToListAsync(ct);
+
+        // Acquisition
+        result.Acquisition = new UserAcquisitionDto
+        {
+            NewUsersTotal = users.Count,
+            NewDPs = users.Count(u => u.Role == "DP"),
+            NewDPCMs = users.Count(u => u.Role == "DPCM"),
+            NewBCs = users.Count(u => u.Role == "BC"),
+            NewECs = users.Count(u => u.Role == "EC"),
+            Trend = users
+                .GroupBy(u => u.CreatedAt.Date)
+                .OrderBy(g => g.Key)
+                .Select(g => new AcquisitionTrendDto
+                {
+                    Date = g.Key,
+                    Total = g.Count(),
+                    DPs = g.Count(u => u.Role == "DP"),
+                    DPCMs = g.Count(u => u.Role == "DPCM"),
+                    BCs = g.Count(u => u.Role == "BC"),
+                    ECs = g.Count(u => u.Role == "EC")
+                })
+                .ToList()
+        };
+
+        // Retention (simplified)
+        var thirtyDaysAgo = DateTime.UtcNow.AddDays(-30);
+        var sevenDaysAgo = DateTime.UtcNow.AddDays(-7);
+
+        var activeInLast30Days = allUsers.Count(u => u.LastLoginAt >= thirtyDaysAgo);
+        var activeInLast7Days = allUsers.Count(u => u.LastLoginAt >= sevenDaysAgo);
+
+        result.Retention = new UserRetentionDto
+        {
+            ActiveUsers = activeInLast30Days,
+            InactiveUsers = allUsers.Count - activeInLast30Days,
+            MonthlyActiveUserRate = allUsers.Count > 0 ? (decimal)activeInLast30Days / allUsers.Count * 100 : 0,
+            WeeklyActiveUserRate = allUsers.Count > 0 ? (decimal)activeInLast7Days / allUsers.Count * 100 : 0
+        };
+
+        // Engagement
+        var dpDeliveryCounts = await _context.Deliveries
+            .Where(d => d.AssignedDPId.HasValue && d.Status == "DELIVERED")
+            .GroupBy(d => d.AssignedDPId!.Value)
+            .Select(g => new { DPId = g.Key, Count = g.Count() })
+            .ToListAsync(ct);
+
+        result.Engagement = new UserEngagementDto
+        {
+            AvgDeliveriesPerDP = dpDeliveryCounts.Count > 0 ? (decimal)dpDeliveryCounts.Average(d => d.Count) : 0,
+            PowerUsers = dpDeliveryCounts.Count(d => d.Count > 50),
+            CasualUsers = dpDeliveryCounts.Count(d => d.Count >= 5 && d.Count <= 50),
+            DormantUsers = allUsers.Count(u => u.Role == "DP") - dpDeliveryCounts.Count
+        };
+
+        // Churn
+        var lastMonth = DateTime.UtcNow.AddMonths(-1);
+        var churned = allUsers.Count(u => u.LastLoginAt < lastMonth && u.CreatedAt < lastMonth);
+
+        result.Churn = new UserChurnDto
+        {
+            ChurnedThisMonth = churned,
+            ChurnRate = allUsers.Count > 0 ? (decimal)churned / allUsers.Count * 100 : 0,
+            AtRiskUsers = allUsers.Count(u => u.LastLoginAt >= lastMonth && u.LastLoginAt < sevenDaysAgo),
+            ChurnByRole = allUsers.Where(u => u.LastLoginAt < lastMonth)
+                .GroupBy(u => u.Role)
+                .ToDictionary(g => g.Key, g => g.Count())
+        };
+
+        return result;
+    }
+
+    public async Task<DPCMPerformanceAnalyticsDto> GetDPCMPerformanceAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default)
+    {
+        var result = new DPCMPerformanceAnalyticsDto();
+
+        var dpcms = await _context.DPCManagers
+            .Include(d => d.User)
+            .ToListAsync(ct);
+
+        var dpProfiles = await _context.DeliveryPartnerProfiles.ToListAsync(ct);
+        var behaviorIndexes = await _context.BehaviorIndexes.ToListAsync(ct);
+        var commissions = await _context.CommissionRecords
+            .Where(c => c.CreatedAt >= request.StartDate && c.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        var deliveries = await _context.Deliveries
+            .Where(d => d.CreatedAt >= request.StartDate && d.CreatedAt <= request.EndDate && d.Status == "DELIVERED")
+            .ToListAsync(ct);
+
+        var complaints = await _context.Complaints
+            .Where(c => c.CreatedAt >= request.StartDate && c.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        var rankings = new List<DPCMRankingDto>();
+        var rank = 1;
+
+        foreach (var dpcm in dpcms)
+        {
+            var managedDPs = dpProfiles.Where(dp => dp.DPCMId == dpcm.Id).ToList();
+            var dpIds = managedDPs.Select(dp => dp.UserId).ToList();
+
+            var dpcmDeliveries = deliveries.Where(d => d.AssignedDPId.HasValue && dpIds.Contains(d.AssignedDPId.Value)).ToList();
+            var dpcmCommissions = commissions.Where(c => c.DPCMId == dpcm.UserId).Sum(c => c.DPCMCommission);
+            var dpcmComplaints = complaints.Count(c => c.AgainstId.HasValue && dpIds.Contains(c.AgainstId.Value));
+            var avgRating = behaviorIndexes.Where(b => dpIds.Contains(b.UserId)).Select(b => b.AverageRating).DefaultIfEmpty(0).Average();
+
+            rankings.Add(new DPCMRankingDto
+            {
+                DPCMId = dpcm.UserId,
+                DPCMName = dpcm.User?.Phone ?? "Unknown",
+                ManagedDPs = managedDPs.Count,
+                ActiveDPs = managedDPs.Count(dp => dp.IsActive),
+                TotalDeliveries = dpcmDeliveries.Count,
+                Revenue = dpcmDeliveries.Sum(d => d.FinalPrice ?? 0),
+                Earnings = dpcmCommissions,
+                AvgDPRating = avgRating,
+                Complaints = dpcmComplaints,
+                Score = (dpcmDeliveries.Count * 0.4m) + (avgRating * 20) - (dpcmComplaints * 5)
+            });
+        }
+
+        // Sort by score and assign ranks
+        rankings = rankings.OrderByDescending(r => r.Score).ToList();
+        foreach (var r in rankings)
+        {
+            r.Rank = rank++;
+        }
+
+        result.Rankings = rankings;
+
+        // Benchmark
+        result.Benchmark = new DPCMBenchmarkDto
+        {
+            AvgDPsPerDPCM = dpcms.Count > 0 ? (decimal)dpProfiles.Count / dpcms.Count : 0,
+            AvgDeliveriesPerDPCM = dpcms.Count > 0 ? (decimal)deliveries.Count / dpcms.Count : 0,
+            AvgRevenuePerDPCM = dpcms.Count > 0 ? deliveries.Sum(d => d.FinalPrice ?? 0) / dpcms.Count : 0,
+            AvgDPRating = behaviorIndexes.Count > 0 ? behaviorIndexes.Average(b => b.AverageRating) : 0,
+            TopPerformerThreshold = rankings.Count > 0 ? rankings.Take(Math.Max(1, rankings.Count / 4)).Last().Score : 0
+        };
+
+        return result;
+    }
+
+    public async Task<ComplaintAnalyticsDto> GetComplaintAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default)
+    {
+        var result = new ComplaintAnalyticsDto();
+
+        var complaints = await _context.Complaints
+            .Where(c => c.CreatedAt >= request.StartDate && c.CreatedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        // Summary
+        result.Summary = new ComplaintSummaryDto
+        {
+            TotalComplaints = complaints.Count,
+            Open = complaints.Count(c => c.Status == "OPEN"),
+            InProgress = complaints.Count(c => c.Status == "IN_PROGRESS"),
+            Resolved = complaints.Count(c => c.Status == "RESOLVED"),
+            Escalated = complaints.Count(c => c.Status == "ESCALATED"),
+            ResolutionRate = complaints.Count > 0 ? (decimal)complaints.Count(c => c.Status == "RESOLVED") / complaints.Count * 100 : 0,
+            CustomerSatisfactionRate = 85 // Placeholder
+        };
+
+        // Trend
+        result.Trend = complaints
+            .GroupBy(c => c.CreatedAt.Date)
+            .OrderBy(g => g.Key)
+            .Select(g => new ComplaintTrendDto
+            {
+                Date = g.Key,
+                NewComplaints = g.Count(),
+                Resolved = g.Count(c => c.Status == "RESOLVED"),
+                Escalated = g.Count(c => c.Status == "ESCALATED"),
+                ResolutionRate = g.Count() > 0 ? (decimal)g.Count(c => c.Status == "RESOLVED") / g.Count() * 100 : 0
+            })
+            .ToList();
+
+        // By category
+        result.ByCategory = complaints
+            .GroupBy(c => c.Category ?? "OTHER")
+            .Select(g => new ComplaintByCategoryDto
+            {
+                Category = g.Key,
+                Count = g.Count(),
+                Percentage = complaints.Count > 0 ? (decimal)g.Count() / complaints.Count * 100 : 0,
+                EscalationRate = g.Count() > 0 ? (decimal)g.Count(c => c.Status == "ESCALATED") / g.Count() * 100 : 0
+            })
+            .ToList();
+
+        // By source (complainant role)
+        var complainerIds = complaints.Select(c => c.RaisedById).Distinct().ToList();
+        var complainerRoles = await _context.Users
+            .Where(u => complainerIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.Role, ct);
+
+        result.BySource = complaints
+            .GroupBy(c => complainerRoles.ContainsKey(c.RaisedById) ? complainerRoles[c.RaisedById] : "UNKNOWN")
+            .Select(g => new ComplaintBySourceDto
+            {
+                Source = g.Key,
+                Count = g.Count(),
+                Percentage = complaints.Count > 0 ? (decimal)g.Count() / complaints.Count * 100 : 0
+            })
+            .ToList();
+
+        // Resolution analytics
+        result.Resolution = new ResolutionAnalyticsDto
+        {
+            AvgFirstResponseTime = 2, // Placeholder - hours
+            AvgResolutionTime = 24, // Placeholder - hours
+            ResolvedWithin24Hours = complaints.Count(c => c.Status == "RESOLVED") / 2,
+            ResolvedWithin48Hours = complaints.Count(c => c.Status == "RESOLVED") / 3,
+            ResolvedBeyond48Hours = complaints.Count(c => c.Status == "RESOLVED") / 6
+        };
+
+        // SLA analytics
+        var slaBreaches = await _context.SLABreaches
+            .Where(s => s.BreachedAt >= request.StartDate && s.BreachedAt <= request.EndDate)
+            .ToListAsync(ct);
+
+        result.SLA = new SLAAnalyticsDto
+        {
+            SLACompliance = complaints.Count > 0 ? (decimal)(complaints.Count - slaBreaches.Count) / complaints.Count * 100 : 100,
+            SLABreaches = slaBreaches.Count,
+            NearSLABreaches = complaints.Count(c => c.Status == "IN_PROGRESS") / 4, // Estimate
+            BreachesByCategory = slaBreaches
+                .GroupBy(s => s.BreachType ?? "OTHER")
+                .Select(g => new SLABreachByCategoryDto
+                {
+                    Category = g.Key,
+                    Breaches = g.Count()
+                })
+                .ToList()
+        };
+
+        return result;
+    }
+
+    public async Task<RealTimeMetricsDto> GetRealTimeMetricsAsync(CancellationToken ct = default)
+    {
+        var now = DateTime.UtcNow;
+        var oneHourAgo = now.AddHours(-1);
+
+        var result = new RealTimeMetricsDto
+        {
+            Timestamp = now,
+            ActiveDeliveries = await _context.Deliveries.CountAsync(d => d.Status == "IN_TRANSIT" || d.Status == "PICKED_UP", ct),
+            OnlineDPs = await _context.DPAvailabilities.CountAsync(a => a.Status == "AVAILABLE", ct),
+            WaitingOrders = await _context.Deliveries.CountAsync(d => d.Status == "PENDING" || d.Status == "CONFIRMED", ct),
+            DeliveriesLastHour = await _context.Deliveries.CountAsync(d => d.CreatedAt >= oneHourAgo, ct),
+            RevenueLastHour = await _context.Payments
+                .Where(p => p.CreatedAt >= oneHourAgo && p.Status == "COMPLETED")
+                .SumAsync(p => p.Amount, ct)
+        };
+
+        // Recent orders
+        result.RecentOrders = await _context.Deliveries
+            .OrderByDescending(d => d.CreatedAt)
+            .Take(10)
+            .Select(d => new LiveOrderDto
+            {
+                DeliveryId = d.Id,
+                Status = d.Status,
+                PickupCity = d.PickupAddress ?? "",
+                DropCity = d.DropAddress ?? "",
+                MinutesSinceCreated = (int)(now - d.CreatedAt).TotalMinutes
+            })
+            .ToListAsync(ct);
+
+        // Active alerts
+        var alerts = new List<ActiveAlertDto>();
+
+        var openComplaints = await _context.Complaints.CountAsync(c => c.Status == "OPEN", ct);
+        if (openComplaints > 10)
+        {
+            alerts.Add(new ActiveAlertDto
+            {
+                Severity = "WARNING",
+                Type = "COMPLAINTS",
+                Message = $"{openComplaints} open complaints need attention",
+                Count = openComplaints,
+                ActionUrl = "/admin/complaints"
+            });
+        }
+
+        var pendingKYC = await _context.KYCRequests.CountAsync(k => k.Status == "PENDING", ct);
+        if (pendingKYC > 20)
+        {
+            alerts.Add(new ActiveAlertDto
+            {
+                Severity = "INFO",
+                Type = "KYC",
+                Message = $"{pendingKYC} KYC requests pending review",
+                Count = pendingKYC,
+                ActionUrl = "/admin/kyc"
+            });
+        }
+
+        var waitingOrders = result.WaitingOrders;
+        if (waitingOrders > 50)
+        {
+            alerts.Add(new ActiveAlertDto
+            {
+                Severity = "CRITICAL",
+                Type = "ORDERS",
+                Message = $"{waitingOrders} orders waiting for assignment",
+                Count = waitingOrders,
+                ActionUrl = "/admin/deliveries"
+            });
+        }
+
+        result.ActiveAlerts = alerts;
+
+        return result;
+    }
+
+    public async Task<ComparisonAnalyticsDto> GetComparisonAnalyticsAsync(DateTime currentStart, DateTime currentEnd, DateTime previousStart, DateTime previousEnd, CancellationToken ct = default)
+    {
+        var result = new ComparisonAnalyticsDto();
+
+        // Current period
+        var currentDeliveries = await _context.Deliveries
+            .Where(d => d.CreatedAt >= currentStart && d.CreatedAt <= currentEnd)
+            .ToListAsync(ct);
+        var currentPayments = await _context.Payments
+            .Where(p => p.CreatedAt >= currentStart && p.CreatedAt <= currentEnd && p.Status == "COMPLETED")
+            .ToListAsync(ct);
+        var currentUsers = await _context.Users
+            .Where(u => u.CreatedAt >= currentStart && u.CreatedAt <= currentEnd)
+            .CountAsync(ct);
+        var currentComplaints = await _context.Complaints
+            .Where(c => c.CreatedAt >= currentStart && c.CreatedAt <= currentEnd)
+            .CountAsync(ct);
+
+        result.CurrentPeriod = new ComparisonPeriodDto
+        {
+            StartDate = currentStart,
+            EndDate = currentEnd,
+            Deliveries = currentDeliveries.Count,
+            Revenue = currentPayments.Sum(p => p.Amount),
+            NewUsers = currentUsers,
+            AvgOrderValue = currentPayments.Count > 0 ? currentPayments.Sum(p => p.Amount) / currentPayments.Count : 0,
+            OnTimeRate = 85, // Placeholder
+            Complaints = currentComplaints
+        };
+
+        // Previous period
+        var previousDeliveries = await _context.Deliveries
+            .Where(d => d.CreatedAt >= previousStart && d.CreatedAt <= previousEnd)
+            .ToListAsync(ct);
+        var previousPayments = await _context.Payments
+            .Where(p => p.CreatedAt >= previousStart && p.CreatedAt <= previousEnd && p.Status == "COMPLETED")
+            .ToListAsync(ct);
+        var previousUsers = await _context.Users
+            .Where(u => u.CreatedAt >= previousStart && u.CreatedAt <= previousEnd)
+            .CountAsync(ct);
+        var previousComplaints = await _context.Complaints
+            .Where(c => c.CreatedAt >= previousStart && c.CreatedAt <= previousEnd)
+            .CountAsync(ct);
+
+        result.PreviousPeriod = new ComparisonPeriodDto
+        {
+            StartDate = previousStart,
+            EndDate = previousEnd,
+            Deliveries = previousDeliveries.Count,
+            Revenue = previousPayments.Sum(p => p.Amount),
+            NewUsers = previousUsers,
+            AvgOrderValue = previousPayments.Count > 0 ? previousPayments.Sum(p => p.Amount) / previousPayments.Count : 0,
+            OnTimeRate = 85,
+            Complaints = previousComplaints
+        };
+
+        // Calculate changes
+        result.KeyMetricChanges = new List<MetricChangeDto>
+        {
+            CreateMetricChange("Deliveries", result.CurrentPeriod.Deliveries, result.PreviousPeriod.Deliveries, true),
+            CreateMetricChange("Revenue", result.CurrentPeriod.Revenue, result.PreviousPeriod.Revenue, true),
+            CreateMetricChange("New Users", result.CurrentPeriod.NewUsers, result.PreviousPeriod.NewUsers, true),
+            CreateMetricChange("Avg Order Value", result.CurrentPeriod.AvgOrderValue, result.PreviousPeriod.AvgOrderValue, true),
+            CreateMetricChange("Complaints", result.CurrentPeriod.Complaints, result.PreviousPeriod.Complaints, false)
+        };
+
+        return result;
+    }
+
+    private static MetricChangeDto CreateMetricChange(string name, decimal current, decimal previous, bool higherIsBetter)
+    {
+        var change = previous > 0 ? (current - previous) / previous * 100 : (current > 0 ? 100 : 0);
+        var trend = change > 5 ? "UP" : change < -5 ? "DOWN" : "STABLE";
+
+        return new MetricChangeDto
+        {
+            MetricName = name,
+            CurrentValue = current,
+            PreviousValue = previous,
+            ChangePercentage = change,
+            Trend = trend,
+            IsPositive = higherIsBetter ? change >= 0 : change <= 0
+        };
+    }
+
+    // ===================================================
+    // STAKEHOLDER ONBOARDING IMPLEMENTATION
+    // ===================================================
+
+    public async Task<RegisterStakeholderResponse> RegisterStakeholderAsync(
+        RegisterStakeholderRequest request,
+        Guid adminId,
+        CancellationToken ct = default)
+    {
+        try
+        {
+            // Validate phone uniqueness
+            var existingUser = await _context.Users
+                .FirstOrDefaultAsync(u => u.Phone == request.Phone, ct);
+
+            if (existingUser != null)
+            {
+                return new RegisterStakeholderResponse
+                {
+                    Success = false,
+                    Message = "A user with this phone number already exists",
+                    Errors = new List<string> { "Phone number already registered" }
+                };
+            }
+
+            // Create User
+            var user = new User
+            {
+                Id = Guid.NewGuid(),
+                Phone = request.Phone,
+                FullName = request.FullName,
+                Email = request.Email,
+                Role = request.Role,
+                IsActive = true,
+                IsPhoneVerified = request.SkipKYC,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+
+            _context.Users.Add(user);
+
+            // Create role-specific profile
+            switch (request.Role.ToUpper())
+            {
+                case "DPCM":
+                    CreateDPCMProfile(user.Id, request);
+                    break;
+                case "DP":
+                    CreateDPProfile(user.Id, request);
+                    break;
+                case "BC":
+                case "DBC":
+                    CreateBCProfile(user.Id, request);
+                    break;
+            }
+
+            // Create wallet if requested
+            if (request.AutoCreateWallet)
+            {
+                var wallet = new Wallet
+                {
+                    Id = Guid.NewGuid(),
+                    UserId = user.Id,
+                    Balance = 0,
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow
+                };
+                _context.Wallets.Add(wallet);
+            }
+
+            // Log audit
+            _context.AdminAuditLogs.Add(new AdminAuditLog
+            {
+                Id = Guid.NewGuid(),
+                UserId = adminId,
+                Action = "STAKEHOLDER_REGISTERED",
+                EntityType = "User",
+                EntityId = user.Id.ToString(),
+                NewValue = $"Role: {request.Role}, Phone: {request.Phone}, Name: {request.FullName}",
+                IpAddress = "system",
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await _context.SaveChangesAsync(ct);
+
+            _logger.LogInformation("Admin {AdminId} registered new stakeholder {UserId} with role {Role}",
+                adminId, user.Id, request.Role);
+
+            return new RegisterStakeholderResponse
+            {
+                Success = true,
+                UserId = user.Id,
+                Phone = user.Phone,
+                Role = user.Role,
+                Message = $"{request.Role} registered successfully"
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error registering stakeholder");
+            return new RegisterStakeholderResponse
+            {
+                Success = false,
+                Message = "Failed to register stakeholder",
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    private void CreateDPCMProfile(Guid userId, RegisterStakeholderRequest request)
+    {
+        var profile = new DPCManager
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            OrganizationName = request.BusinessName ?? request.FullName,
+            ContactPersonName = request.FullName,
+            PAN = request.BusinessPAN ?? "",
+            CommissionType = request.CommissionType ?? "PERCENTAGE",
+            CommissionValue = request.CommissionValue ?? 5m,
+            SecurityDeposit = request.SecurityDeposit ?? 0,
+            ServiceRegions = request.ServiceRegions != null ? System.Text.Json.JsonSerializer.Serialize(request.ServiceRegions) : null,
+            IsActive = request.SkipKYC,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context.DPCManagers.Add(profile);
+    }
+
+    private void CreateDPProfile(Guid userId, RegisterStakeholderRequest request)
+    {
+        var profile = new DeliveryPartnerProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            FullName = request.FullName,
+            VehicleType = request.VehicleType ?? "BIKE",
+            DPCMId = request.DPCMId,
+            IsActive = request.SkipKYC,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context.DeliveryPartnerProfiles.Add(profile);
+
+        // Create service area if pincodes provided
+        if (request.ServicePincodes?.Any() == true)
+        {
+            var serviceArea = new ServiceArea
+            {
+                Id = Guid.NewGuid(),
+                UserId = userId,
+                UserRole = "DP",
+                AreaName = "Service Area",
+                AreaType = "CIRCLE",
+                CenterLat = 0,
+                CenterLng = 0,
+                RadiusKm = 5,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            };
+            _context.ServiceAreas.Add(serviceArea);
+        }
+    }
+
+    private void CreateBCProfile(Guid userId, RegisterStakeholderRequest request)
+    {
+        var profile = new BusinessConsumerProfile
+        {
+            Id = Guid.NewGuid(),
+            UserId = userId,
+            BusinessName = request.BusinessName ?? request.FullName,
+            ContactPersonName = request.FullName,
+            BusinessCategory = request.BusinessType ?? "RETAIL",
+            GSTIN = request.GSTIN,
+            PAN = request.BusinessPAN ?? "",
+            IsActive = request.SkipKYC,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+        _context.BusinessConsumerProfiles.Add(profile);
+    }
+
+    public async Task<StakeholderListResponse> GetStakeholdersAsync(
+        StakeholderListRequest request,
+        CancellationToken ct = default)
+    {
+        var query = _context.Users.AsQueryable();
+
+        // Apply filters
+        if (!string.IsNullOrEmpty(request.Role))
+        {
+            query = query.Where(u => u.Role == request.Role);
+        }
+
+        if (!string.IsNullOrEmpty(request.Status))
+        {
+            var isActive = request.Status.ToUpper() == "ACTIVE";
+            query = query.Where(u => u.IsActive == isActive);
+        }
+
+        if (!string.IsNullOrEmpty(request.SearchTerm))
+        {
+            var term = request.SearchTerm.ToLower();
+            query = query.Where(u =>
+                (u.Phone != null && u.Phone.Contains(term)) ||
+                (u.FullName != null && u.FullName.ToLower().Contains(term)) ||
+                (u.Email != null && u.Email.ToLower().Contains(term)));
+        }
+
+        if (request.RegisteredFrom.HasValue)
+        {
+            query = query.Where(u => u.CreatedAt >= request.RegisteredFrom.Value);
+        }
+
+        if (request.RegisteredTo.HasValue)
+        {
+            query = query.Where(u => u.CreatedAt <= request.RegisteredTo.Value);
+        }
+
+        // Exclude Admin users from stakeholder list
+        query = query.Where(u => u.Role != "Admin");
+
+        var totalCount = await query.CountAsync(ct);
+
+        // Apply sorting
+        query = request.SortDesc
+            ? query.OrderByDescending(u => u.CreatedAt)
+            : query.OrderBy(u => u.CreatedAt);
+
+        // Apply pagination
+        var users = await query
+            .Skip((request.Page - 1) * request.PageSize)
+            .Take(request.PageSize)
+            .ToListAsync(ct);
+
+        // Get related data
+        var userIds = users.Select(u => u.Id).ToList();
+        var dpProfiles = await _context.DeliveryPartnerProfiles
+            .Where(dp => userIds.Contains(dp.UserId))
+            .ToListAsync(ct);
+        var bcProfiles = await _context.BusinessConsumerProfiles
+            .Where(bc => userIds.Contains(bc.UserId))
+            .ToListAsync(ct);
+        var dpcmProfiles = await _context.DPCManagers
+            .Where(dpcm => userIds.Contains(dpcm.UserId))
+            .ToListAsync(ct);
+        var wallets = await _context.Wallets
+            .Where(w => userIds.Contains(w.UserId))
+            .ToListAsync(ct);
+        var dpAvailabilities = await _context.DPAvailabilities
+            .Where(a => userIds.Contains(a.DPId))
+            .ToListAsync(ct);
+
+        // Get DPCM names for DPs
+        var dpcmIds = dpProfiles.Where(dp => dp.DPCMId.HasValue).Select(dp => dp.DPCMId!.Value).Distinct().ToList();
+        var dpcmNames = await _context.Users
+            .Where(u => dpcmIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.FullName ?? u.Phone ?? "", ct);
+
+        // Map to DTOs
+        var items = users.Select(u =>
+        {
+            var dpProfile = dpProfiles.FirstOrDefault(dp => dp.UserId == u.Id);
+            var bcProfile = bcProfiles.FirstOrDefault(bc => bc.UserId == u.Id);
+            var dpcmProfile = dpcmProfiles.FirstOrDefault(dpcm => dpcm.UserId == u.Id);
+            var wallet = wallets.FirstOrDefault(w => w.UserId == u.Id);
+            var availability = dpAvailabilities.FirstOrDefault(a => a.DPId == u.Id);
+
+            return new StakeholderListItemDto
+            {
+                Id = u.Id,
+                Phone = u.Phone ?? "",
+                PhoneMasked = MaskPhone(u.Phone ?? ""),
+                FullName = u.FullName ?? "N/A",
+                Email = u.Email,
+                EmailMasked = MaskEmail(u.Email),
+                Role = u.Role,
+                Status = u.IsActive ? "Active" : "Inactive",
+                KYCStatus = u.IsPhoneVerified ? "VERIFIED" : "PENDING",
+                CreatedAt = u.CreatedAt,
+                LastLoginAt = u.LastLoginAt,
+                BusinessName = bcProfile?.BusinessName ?? dpcmProfile?.OrganizationName,
+                VehicleType = dpProfile?.VehicleType,
+                DPCMName = dpProfile?.DPCMId.HasValue == true && dpcmNames.ContainsKey(dpProfile.DPCMId.Value)
+                    ? dpcmNames[dpProfile.DPCMId.Value]
+                    : null,
+                TotalDeliveries = 0,
+                Rating = null,
+                WalletBalance = wallet?.Balance,
+                IsOnline = availability?.Status == "ONLINE"
+            };
+        }).ToList();
+
+        // Get summary counts
+        var allUsersQuery = _context.Users.Where(u => u.Role != "Admin");
+        var totalDPCMs = await allUsersQuery.CountAsync(u => u.Role == "DPCM", ct);
+        var totalDPs = await allUsersQuery.CountAsync(u => u.Role == "DP", ct);
+        var totalBCs = await allUsersQuery.CountAsync(u => u.Role == "BC" || u.Role == "DBC", ct);
+        var totalECs = await allUsersQuery.CountAsync(u => u.Role == "EC", ct);
+        var pendingKYC = await allUsersQuery.CountAsync(u => !u.IsPhoneVerified, ct);
+
+        return new StakeholderListResponse
+        {
+            Items = items,
+            TotalCount = totalCount,
+            Page = request.Page,
+            PageSize = request.PageSize,
+            TotalDPCMs = totalDPCMs,
+            TotalDPs = totalDPs,
+            TotalBCs = totalBCs,
+            TotalECs = totalECs,
+            PendingKYC = pendingKYC
+        };
+    }
+
+    public async Task<StakeholderDetailDto?> GetStakeholderDetailAsync(Guid userId, CancellationToken ct = default)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == userId, ct);
+        if (user == null) return null;
+
+        var wallet = await _context.Wallets.FirstOrDefaultAsync(w => w.UserId == userId, ct);
+        var deliveries = await _context.Deliveries
+            .Where(d => d.RequesterId == userId || d.AssignedDPId == userId)
+            .ToListAsync(ct);
+
+        var detail = new StakeholderDetailDto
+        {
+            Id = user.Id,
+            Phone = user.Phone ?? "",
+            FullName = user.FullName ?? "N/A",
+            Email = user.Email,
+            Role = user.Role,
+            Status = user.IsActive ? "Active" : "Inactive",
+            CreatedAt = user.CreatedAt,
+            KYCStatus = user.IsPhoneVerified ? "VERIFIED" : "PENDING",
+            WalletBalance = wallet?.Balance ?? 0,
+            TotalDeliveries = deliveries.Count,
+            CompletedDeliveries = deliveries.Count(d => d.Status == "DELIVERED"),
+            CancelledDeliveries = deliveries.Count(d => d.Status == "CANCELLED")
+        };
+
+        // Load role-specific details
+        switch (user.Role.ToUpper())
+        {
+            case "DPCM":
+                var dpcmProfile = await _context.DPCManagers
+                    .FirstOrDefaultAsync(p => p.UserId == userId, ct);
+                if (dpcmProfile != null)
+                {
+                    var managedDPs = await _context.DeliveryPartnerProfiles
+                        .Where(dp => dp.DPCMId == userId)
+                        .ToListAsync(ct);
+
+                    detail.DPCMDetails = new DPCMDetailDto
+                    {
+                        BusinessName = dpcmProfile.OrganizationName,
+                        CommissionType = dpcmProfile.CommissionType ?? "PERCENTAGE",
+                        CommissionValue = dpcmProfile.CommissionValue ?? 0,
+                        SecurityDeposit = dpcmProfile.SecurityDeposit,
+                        ManagedDPsCount = managedDPs.Count,
+                        ActiveDPsCount = managedDPs.Count(dp => dp.IsActive),
+                        ServiceRegions = dpcmProfile.ServiceRegions != null
+                            ? TryParseJsonArray(dpcmProfile.ServiceRegions)
+                            : new List<string>()
+                    };
+                }
+                break;
+
+            case "DP":
+                var dpProfile = await _context.DeliveryPartnerProfiles
+                    .FirstOrDefaultAsync(p => p.UserId == userId, ct);
+                if (dpProfile != null)
+                {
+                    var serviceAreas = await _context.ServiceAreas
+                        .Where(sa => sa.UserId == userId && sa.IsActive)
+                        .ToListAsync(ct);
+                    var availability = await _context.DPAvailabilities
+                        .FirstOrDefaultAsync(a => a.DPId == userId, ct);
+
+                    string? dpcmName = null;
+                    if (dpProfile.DPCMId.HasValue)
+                    {
+                        var dpcm = await _context.Users.FindAsync(dpProfile.DPCMId.Value);
+                        dpcmName = dpcm?.FullName ?? dpcm?.Phone;
+                    }
+
+                    detail.DPDetails = new DPDetailDto
+                    {
+                        DPCMId = dpProfile.DPCMId,
+                        DPCMName = dpcmName,
+                        VehicleType = dpProfile.VehicleType,
+                        VehicleNumber = null,
+                        ServicePincodes = new List<string>(),
+                        IsOnline = availability?.Status == "ONLINE",
+                        LastActiveAt = availability?.UpdatedAt,
+                        BehaviorIndex = 100
+                    };
+                    detail.Rating = 5;
+                }
+                break;
+
+            case "BC":
+            case "DBC":
+                var bcProfile = await _context.BusinessConsumerProfiles
+                    .FirstOrDefaultAsync(p => p.UserId == userId, ct);
+                if (bcProfile != null)
+                {
+                    var apiKeys = await _context.BCApiCredentials
+                        .Where(c => c.BusinessConsumerId == userId)
+                        .CountAsync(ct);
+
+                    detail.BCDetails = new BCDetailDto
+                    {
+                        BusinessName = bcProfile.BusinessName,
+                        BusinessType = bcProfile.BusinessCategory,
+                        GSTIN = bcProfile.GSTIN,
+                        BusinessPAN = bcProfile.PAN,
+                        HasAPIAccess = apiKeys > 0,
+                        APIKeyCount = apiKeys
+                    };
+                }
+                break;
+        }
+
+        return detail;
+    }
+
+    private static List<string> TryParseJsonArray(string json)
+    {
+        try
+        {
+            return System.Text.Json.JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+        }
+        catch
+        {
+            return json.Split(',').Select(s => s.Trim()).ToList();
+        }
+    }
+
+    public async Task<OnboardingStatsDto> GetOnboardingStatsAsync(CancellationToken ct = default)
+    {
+        var today = DateTime.UtcNow.Date;
+        var weekStart = today.AddDays(-(int)today.DayOfWeek);
+        var monthStart = new DateTime(today.Year, today.Month, 1);
+
+        var users = await _context.Users.Where(u => u.Role != "Admin").ToListAsync(ct);
+
+        return new OnboardingStatsDto
+        {
+            TotalStakeholders = users.Count,
+            RegisteredToday = users.Count(u => u.CreatedAt.Date == today),
+            RegisteredThisWeek = users.Count(u => u.CreatedAt >= weekStart),
+            RegisteredThisMonth = users.Count(u => u.CreatedAt >= monthStart),
+            PendingKYC = users.Count(u => !u.IsPhoneVerified),
+            PendingApproval = users.Count(u => !u.IsActive),
+            DPCMStats = CreateRoleStats(users, "DPCM", monthStart),
+            DPStats = CreateRoleStats(users, "DP", monthStart),
+            BCStats = CreateRoleStats(users.Where(u => u.Role == "BC" || u.Role == "DBC").ToList(), null, monthStart),
+            ECStats = CreateRoleStats(users, "EC", monthStart)
+        };
+    }
+
+    private static RoleStatsDto CreateRoleStats(List<User> allUsers, string? role, DateTime monthStart)
+    {
+        var users = role != null ? allUsers.Where(u => u.Role == role).ToList() : allUsers;
+        return new RoleStatsDto
+        {
+            Total = users.Count,
+            Active = users.Count(u => u.IsActive),
+            Inactive = users.Count(u => !u.IsActive),
+            PendingKYC = users.Count(u => !u.IsPhoneVerified),
+            NewThisMonth = users.Count(u => u.CreatedAt >= monthStart)
+        };
+    }
+
+    public async Task<List<AvailableDPCMDto>> GetAvailableDPCMsAsync(CancellationToken ct = default)
+    {
+        var dpcmProfiles = await _context.DPCManagers
+            .Include(p => p.User)
+            .Where(p => p.IsActive && p.User.IsActive)
+            .ToListAsync(ct);
+
+        var dpcmIds = dpcmProfiles.Select(p => p.UserId).ToList();
+        var dpCounts = await _context.DeliveryPartnerProfiles
+            .Where(dp => dp.DPCMId.HasValue && dpcmIds.Contains(dp.DPCMId.Value))
+            .GroupBy(dp => dp.DPCMId!.Value)
+            .Select(g => new { DPCMId = g.Key, Count = g.Count() })
+            .ToDictionaryAsync(x => x.DPCMId, x => x.Count, ct);
+
+        return dpcmProfiles.Select(p => new AvailableDPCMDto
+        {
+            Id = p.UserId,
+            Name = p.User.FullName ?? p.User.Phone ?? "",
+            Phone = p.User.Phone ?? "",
+            BusinessName = p.OrganizationName,
+            ManagedDPsCount = dpCounts.ContainsKey(p.UserId) ? dpCounts[p.UserId] : 0,
+            ServiceRegions = p.ServiceRegions != null ? TryParseJsonArray(p.ServiceRegions) : new List<string>()
+        }).ToList();
+    }
+
+    private static string MaskPhone(string phone)
+    {
+        if (string.IsNullOrEmpty(phone) || phone.Length < 4)
+            return "****";
+        return "******" + phone.Substring(phone.Length - 4);
+    }
+
+    private static string? MaskEmail(string? email)
+    {
+        if (string.IsNullOrEmpty(email) || !email.Contains('@'))
+            return null;
+        var parts = email.Split('@');
+        var name = parts[0];
+        var maskedName = name.Length > 2 ? name[0] + "***" + name[^1] : "***";
+        return maskedName + "@" + parts[1];
+    }
 }

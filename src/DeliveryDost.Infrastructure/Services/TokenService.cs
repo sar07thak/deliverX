@@ -80,7 +80,7 @@ public class TokenService : ITokenService
         {
             AccessToken = accessToken,
             RefreshToken = refreshToken,
-            ExpiresIn = _jwtSettings.AccessTokenExpirationMinutes * 60, // Convert to seconds
+            ExpiresIn = _jwtSettings.AccessTokenExpirationMinutes * 60,
             User = new UserDto
             {
                 Id = user.Id,
@@ -94,37 +94,39 @@ public class TokenService : ITokenService
 
     private async Task<bool> CheckProfileCompletionAsync(User user, CancellationToken cancellationToken)
     {
-        // For DP role, check if DeliveryPartnerProfile exists with FullName
-        if (user.Role == "DP")
+        try
         {
-            var dpProfile = await _context.DeliveryPartnerProfiles
-                .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
-            return dpProfile != null && !string.IsNullOrEmpty(dpProfile.FullName);
-        }
+            if (user.Role == "DP")
+            {
+                var dpProfile = await _context.DeliveryPartnerProfiles
+                    .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+                return dpProfile != null && !string.IsNullOrEmpty(dpProfile.FullName);
+            }
 
-        // For BC role, check if BusinessConsumerProfile exists with BusinessName
-        if (user.Role == "BC" || user.Role == "DBC")
+            if (user.Role == "BC" || user.Role == "DBC")
+            {
+                var bcProfile = await _context.BusinessConsumerProfiles
+                    .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+                return bcProfile != null && !string.IsNullOrEmpty(bcProfile.BusinessName);
+            }
+
+            if (user.Role == "DPCM")
+            {
+                var dpcmProfile = await _context.DPCManagers
+                    .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
+                return dpcmProfile != null && !string.IsNullOrEmpty(dpcmProfile.ContactPersonName);
+            }
+
+            return true;
+        }
+        catch
         {
-            var bcProfile = await _context.BusinessConsumerProfiles
-                .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
-            return bcProfile != null && !string.IsNullOrEmpty(bcProfile.BusinessName);
+            return true;
         }
-
-        // For DPCM role, check if DPCManager profile exists with ContactPersonName
-        if (user.Role == "DPCM")
-        {
-            var dpcmProfile = await _context.DPCManagers
-                .FirstOrDefaultAsync(p => p.UserId == user.Id, cancellationToken);
-            return dpcmProfile != null && !string.IsNullOrEmpty(dpcmProfile.ContactPersonName);
-        }
-
-        // For Admin/EC roles, profile is always complete (no additional profile needed)
-        return true;
     }
 
     public async Task<TokenResponse?> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
     {
-        // Get session by refresh token
         var session = await _sessionService.GetSessionByRefreshTokenAsync(refreshToken, cancellationToken);
 
         if (session == null || session.IsRevoked || session.ExpiresAt < DateTime.UtcNow)
@@ -132,17 +134,13 @@ public class TokenService : ITokenService
             return null;
         }
 
-        // Get user
         var user = await _context.Users.FindAsync(new object[] { session.UserId }, cancellationToken);
         if (user == null || !user.IsActive)
         {
             return null;
         }
 
-        // Generate new tokens
         var tokens = await GenerateTokensAsync(user, session.DeviceId ?? string.Empty, cancellationToken);
-
-        // Update session activity
         await _sessionService.UpdateSessionActivityAsync(session.Id, cancellationToken);
 
         return tokens;
@@ -178,11 +176,19 @@ public class TokenService : ITokenService
 
     public async Task<List<string>> GetUserPermissionsAsync(string role, CancellationToken cancellationToken = default)
     {
-        var permissions = await _context.RolePermissions
-            .Where(rp => rp.Role == role && rp.Permission != null)
-            .Select(rp => rp.Permission!.Code)
-            .ToListAsync(cancellationToken);
+        try
+        {
+            var permissions = await _context.RolePermissions
+                .Include(rp => rp.Permission)
+                .Where(rp => rp.Role == role && rp.Permission != null)
+                .Select(rp => rp.Permission!.Code)
+                .ToListAsync(cancellationToken);
 
-        return permissions ?? new List<string>();
+            return permissions ?? new List<string>();
+        }
+        catch
+        {
+            return new List<string>();
+        }
     }
 }

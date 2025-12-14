@@ -13,6 +13,16 @@ public interface IDashboardService
     Task<RevenueStatsDto> GetRevenueStatsAsync(CancellationToken ct = default);
     Task<ReportResponse> GenerateReportAsync(ReportRequest request, CancellationToken ct = default);
 
+    // Drill-Down Analytics
+    Task<GeographicAnalyticsDto> GetGeographicAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default);
+    Task<DeliveryPerformanceAnalyticsDto> GetDeliveryPerformanceAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default);
+    Task<FinancialAnalyticsDto> GetFinancialAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default);
+    Task<UserAnalyticsDto> GetUserAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default);
+    Task<DPCMPerformanceAnalyticsDto> GetDPCMPerformanceAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default);
+    Task<ComplaintAnalyticsDto> GetComplaintAnalyticsAsync(AnalyticsDrillDownRequest request, CancellationToken ct = default);
+    Task<RealTimeMetricsDto> GetRealTimeMetricsAsync(CancellationToken ct = default);
+    Task<ComparisonAnalyticsDto> GetComparisonAnalyticsAsync(DateTime currentStart, DateTime currentEnd, DateTime previousStart, DateTime previousEnd, CancellationToken ct = default);
+
     // DPCM Dashboard
     Task<DPCMDashboardDto> GetDPCMDashboardAsync(Guid dpcmId, CancellationToken ct = default);
     Task<DPCMPartnersResponse> GetDPCMPartnersAsync(Guid dpcmId, DPCMPartnersRequest request, CancellationToken ct = default);
@@ -39,4 +49,11 @@ public interface IDashboardService
     // System Configuration
     Task<SystemConfigDto> GetSystemConfigAsync(CancellationToken ct = default);
     Task<bool> UpdateSystemConfigAsync(UpdateConfigRequest request, Guid adminId, CancellationToken ct = default);
+
+    // Stakeholder Onboarding (Admin)
+    Task<RegisterStakeholderResponse> RegisterStakeholderAsync(RegisterStakeholderRequest request, Guid adminId, CancellationToken ct = default);
+    Task<StakeholderListResponse> GetStakeholdersAsync(StakeholderListRequest request, CancellationToken ct = default);
+    Task<StakeholderDetailDto?> GetStakeholderDetailAsync(Guid userId, CancellationToken ct = default);
+    Task<OnboardingStatsDto> GetOnboardingStatsAsync(CancellationToken ct = default);
+    Task<List<AvailableDPCMDto>> GetAvailableDPCMsAsync(CancellationToken ct = default);
 }

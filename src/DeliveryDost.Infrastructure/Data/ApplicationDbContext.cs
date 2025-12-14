@@ -55,6 +55,10 @@ public class ApplicationDbContext : DbContext
     public DbSet<ComplaintComment> ComplaintComments => Set<ComplaintComment>();
     public DbSet<Inspector> Inspectors => Set<Inspector>();
     public DbSet<ComplaintSLAConfig> ComplaintSLAConfigs => Set<ComplaintSLAConfig>();
+    public DbSet<FieldVisit> FieldVisits => Set<FieldVisit>();
+    public DbSet<FieldVisitEvidence> FieldVisitEvidences => Set<FieldVisitEvidence>();
+    public DbSet<InvestigationReport> InvestigationReports => Set<InvestigationReport>();
+    public DbSet<SLABreach> SLABreaches => Set<SLABreach>();
 
     // Wallet, Payments & Settlements
     public DbSet<Wallet> Wallets => Set<Wallet>();
@@ -99,6 +103,41 @@ public class ApplicationDbContext : DbContext
     // Bidding Platform (Group 4 Feature)
     public DbSet<DeliveryBid> DeliveryBids => Set<DeliveryBid>();
     public DbSet<BiddingConfig> BiddingConfigs => Set<BiddingConfig>();
+
+    // Courier Partners (for >15km deliveries)
+    public DbSet<CourierPartner> CourierPartners => Set<CourierPartner>();
+    public DbSet<CourierShipment> CourierShipments => Set<CourierShipment>();
+    public DbSet<CourierRateQuote> CourierRateQuotes => Set<CourierRateQuote>();
+
+    // Invoicing (for Business Consumers)
+    public DbSet<Invoice> Invoices => Set<Invoice>();
+    public DbSet<InvoiceItem> InvoiceItems => Set<InvoiceItem>();
+
+    // BC API Integration
+    public DbSet<BCApiCredential> BCApiCredentials => Set<BCApiCredential>();
+    public DbSet<BCOAuthToken> BCOAuthTokens => Set<BCOAuthToken>();
+    public DbSet<ApiKeyUsageLog> ApiKeyUsageLogs => Set<ApiKeyUsageLog>();
+    public DbSet<BCWebhook> BCWebhooks => Set<BCWebhook>();
+    public DbSet<WebhookDeliveryLog> WebhookDeliveryLogs => Set<WebhookDeliveryLog>();
+    public DbSet<ApiRateLimitEntry> ApiRateLimitEntries => Set<ApiRateLimitEntry>();
+
+    // Pool Routes & Fleet Management
+    public DbSet<PoolRoute> PoolRoutes => Set<PoolRoute>();
+    public DbSet<PoolRouteStop> PoolRouteStops => Set<PoolRouteStop>();
+    public DbSet<PoolRouteTrip> PoolRouteTrips => Set<PoolRouteTrip>();
+    public DbSet<PoolTripDelivery> PoolTripDeliveries => Set<PoolTripDelivery>();
+    public DbSet<FleetVehicle> FleetVehicles => Set<FleetVehicle>();
+    public DbSet<DPLocationHistory> DPLocationHistories => Set<DPLocationHistory>();
+    public DbSet<RouteOptimizationRequest> RouteOptimizationRequests => Set<RouteOptimizationRequest>();
+
+    // News & Notifications
+    public DbSet<NewsAnnouncement> NewsAnnouncements => Set<NewsAnnouncement>();
+    public DbSet<NewsReadStatus> NewsReadStatuses => Set<NewsReadStatus>();
+    public DbSet<UserNotification> UserNotifications => Set<UserNotification>();
+    public DbSet<NotificationPreference> NotificationPreferences => Set<NotificationPreference>();
+    public DbSet<PushDeviceRegistration> PushDeviceRegistrations => Set<PushDeviceRegistration>();
+    public DbSet<NotificationTemplate> NotificationTemplates => Set<NotificationTemplate>();
+    public DbSet<NotificationCampaign> NotificationCampaigns => Set<NotificationCampaign>();
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {

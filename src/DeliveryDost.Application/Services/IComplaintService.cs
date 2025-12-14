@@ -32,4 +32,27 @@ public interface IComplaintService
     Task<InspectorDto?> CreateInspectorAsync(CreateInspectorRequest request, CancellationToken ct = default);
     Task<InspectorDto?> GetInspectorAsync(Guid inspectorId, CancellationToken ct = default);
     Task<List<InspectorDto>> GetAvailableInspectorsAsync(CancellationToken ct = default);
+
+    // Auto-assignment
+    Task<AutoAssignmentResult> AutoAssignComplaintAsync(Guid complaintId, CancellationToken ct = default);
+
+    // Field Visit operations
+    Task<FieldVisitDto?> ScheduleFieldVisitAsync(Guid inspectorId, ScheduleFieldVisitRequest request, CancellationToken ct = default);
+    Task<FieldVisitDto?> GetFieldVisitAsync(Guid fieldVisitId, CancellationToken ct = default);
+    Task<List<FieldVisitDto>> GetFieldVisitsForComplaintAsync(Guid complaintId, CancellationToken ct = default);
+    Task<List<FieldVisitDto>> GetFieldVisitsForInspectorAsync(Guid inspectorId, DateTime? fromDate = null, CancellationToken ct = default);
+    Task<bool> StartFieldVisitAsync(Guid fieldVisitId, decimal latitude, decimal longitude, CancellationToken ct = default);
+    Task<bool> CompleteFieldVisitAsync(Guid fieldVisitId, CompleteFieldVisitRequest request, CancellationToken ct = default);
+    Task<bool> CancelFieldVisitAsync(Guid fieldVisitId, CancelFieldVisitRequest request, CancellationToken ct = default);
+    Task<bool> AddFieldVisitEvidenceAsync(Guid fieldVisitId, AddFieldVisitEvidenceRequest request, CancellationToken ct = default);
+
+    // Investigation Report operations
+    Task<InvestigationReportDto?> SubmitInvestigationReportAsync(Guid inspectorId, SubmitInvestigationReportRequest request, CancellationToken ct = default);
+    Task<InvestigationReportDto?> GetInvestigationReportAsync(Guid complaintId, CancellationToken ct = default);
+    Task<bool> ApproveInvestigationReportAsync(Guid reportId, Guid approverId, ApproveInvestigationReportRequest request, CancellationToken ct = default);
+
+    // SLA Management
+    Task<SLAStatusDto?> GetSLAStatusAsync(Guid complaintId, CancellationToken ct = default);
+    Task<List<SLABreachDto>> GetSLABreachesAsync(DateTime? fromDate = null, bool pendingOnly = false, CancellationToken ct = default);
+    Task<bool> EscalateSLABreachAsync(Guid breachId, Guid escalateToId, CancellationToken ct = default);
 }

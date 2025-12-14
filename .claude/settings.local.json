@@ -29,7 +29,17 @@
       "Bash(cat:*)",
       "Bash(cmd.exe /c \"taskkill /F /PID 14428 /PID 16436\")",
       "Bash(findstr:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 2508\")",
+      "Bash(cmd.exe /c \"tasklist | findstr DeliveryDost\")",
+      "Bash(cmd.exe /c \"tasklist | findstr -i DeliveryDost\")",
+      "Bash(cmd.exe /c \"taskkill /F /PID 22800\")",
+      "Bash(cmd.exe /c \"taskkill /F /PID 18556\")",
+      "Bash(cmd.exe /c \"rmdir /S /Q C:\\Users\\HP\\Desktop\\finnidTech\\src\\DeliveryDost.Web\\bin\")",
+      "Bash(cmd.exe /c \"taskkill /F /IM devenv.exe\")",
+      "Bash(cmd.exe /c \"taskkill /F /IM DeliveryDost.Web.exe 2>nul & taskkill /F /IM dotnet.exe 2>nul & echo Done\")",
+      "Bash(cmd.exe /c \"rmdir /S /Q C:\\Users\\HP\\Desktop\\finnidTech\\src\\DeliveryDost.Web\\bin 2>nul & rmdir /S /Q C:\\Users\\HP\\Desktop\\finnidTech\\src\\DeliveryDost.Web\\obj 2>nul & echo Cleaned\")",
+      "Bash(dotnet ef database:*)"
     ],
     "deny": [],
     "ask": []

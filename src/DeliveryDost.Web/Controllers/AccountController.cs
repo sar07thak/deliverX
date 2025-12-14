@@ -65,7 +65,7 @@ public class AccountController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error sending OTP for {Phone}", model.Phone);
-            ModelState.AddModelError("", "An error occurred. Please try again.");
+            ModelState.AddModelError("", $"Error: {ex.Message}");
             return View("Login", model);
         }
     }
@@ -170,7 +170,7 @@ public class AccountController : Controller
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error verifying OTP for {Phone}", model.Phone);
-            ModelState.AddModelError("", "An error occurred. Please try again.");
+            ModelState.AddModelError("", $"Error: {ex.Message}");
             TempData["Phone"] = model.Phone;
             TempData["Role"] = role;
             return View(model);

@@ -197,3 +197,157 @@ public class ComplaintSLAConfigConfiguration : IEntityTypeConfiguration<Complain
         builder.HasIndex(s => new { s.Category, s.Severity }).IsUnique();
     }
 }
+
+public class FieldVisitConfiguration : IEntityTypeConfiguration<FieldVisit>
+{
+    public void Configure(EntityTypeBuilder<FieldVisit> builder)
+    {
+        builder.ToTable("FieldVisits");
+
+        builder.HasKey(f => f.Id);
+
+        builder.Property(f => f.Status)
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(f => f.Address)
+            .HasMaxLength(500);
+
+        builder.Property(f => f.Notes)
+            .HasMaxLength(2000);
+
+        builder.Property(f => f.CancellationReason)
+            .HasMaxLength(500);
+
+        builder.Property(f => f.Latitude)
+            .HasPrecision(10, 7);
+
+        builder.Property(f => f.Longitude)
+            .HasPrecision(10, 7);
+
+        builder.HasIndex(f => f.ScheduledAt);
+        builder.HasIndex(f => f.Status);
+
+        builder.HasOne(f => f.Complaint)
+            .WithMany()
+            .HasForeignKey(f => f.ComplaintId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(f => f.Inspector)
+            .WithMany()
+            .HasForeignKey(f => f.InspectorId)
+            .OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
+public class FieldVisitEvidenceConfiguration : IEntityTypeConfiguration<FieldVisitEvidence>
+{
+    public void Configure(EntityTypeBuilder<FieldVisitEvidence> builder)
+    {
+        builder.ToTable("FieldVisitEvidences");
+
+        builder.HasKey(e => e.Id);
+
+        builder.Property(e => e.Type)
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(e => e.FileName)
+            .HasMaxLength(255);
+
+        builder.Property(e => e.FileUrl)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.Description)
+            .HasMaxLength(500);
+
+        builder.Property(e => e.Latitude)
+            .HasPrecision(10, 7);
+
+        builder.Property(e => e.Longitude)
+            .HasPrecision(10, 7);
+
+        builder.HasOne(e => e.FieldVisit)
+            .WithMany(f => f.Evidences)
+            .HasForeignKey(e => e.FieldVisitId)
+            .OnDelete(DeleteBehavior.Cascade);
+    }
+}
+
+public class InvestigationReportConfiguration : IEntityTypeConfiguration<InvestigationReport>
+{
+    public void Configure(EntityTypeBuilder<InvestigationReport> builder)
+    {
+        builder.ToTable("InvestigationReports");
+
+        builder.HasKey(r => r.Id);
+
+        builder.Property(r => r.Findings)
+            .HasMaxLength(4000)
+            .IsRequired();
+
+        builder.Property(r => r.Verdict)
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.Property(r => r.VerdictReason)
+            .HasMaxLength(2000);
+
+        builder.Property(r => r.RecommendedAction)
+            .HasMaxLength(50);
+
+        builder.Property(r => r.CompensationAmount)
+            .HasPrecision(18, 2);
+
+        builder.Property(r => r.PenaltyType)
+            .HasMaxLength(20);
+
+        builder.Property(r => r.PenaltyAmount)
+            .HasPrecision(18, 2);
+
+        builder.HasIndex(r => r.ComplaintId).IsUnique();
+        builder.HasIndex(r => r.Verdict);
+
+        builder.HasOne(r => r.Complaint)
+            .WithMany()
+            .HasForeignKey(r => r.ComplaintId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(r => r.Inspector)
+            .WithMany()
+            .HasForeignKey(r => r.InspectorId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(r => r.ApprovedBy)
+            .WithMany()
+            .HasForeignKey(r => r.ApprovedById)
+            .OnDelete(DeleteBehavior.NoAction);
+    }
+}
+
+public class SLABreachConfiguration : IEntityTypeConfiguration<SLABreach>
+{
+    public void Configure(EntityTypeBuilder<SLABreach> builder)
+    {
+        builder.ToTable("SLABreaches");
+
+        builder.HasKey(s => s.Id);
+
+        builder.Property(s => s.BreachType)
+            .HasMaxLength(20)
+            .IsRequired();
+
+        builder.HasIndex(s => s.ComplaintId);
+        builder.HasIndex(s => s.BreachedAt);
+
+        builder.HasOne(s => s.Complaint)
+            .WithMany()
+            .HasForeignKey(s => s.ComplaintId)
+            .OnDelete(DeleteBehavior.NoAction);
+
+        builder.HasOne(s => s.EscalatedTo)
+            .WithMany()
+            .HasForeignKey(s => s.EscalatedToId)
+            .OnDelete(DeleteBehavior.NoAction);
+    }
+}

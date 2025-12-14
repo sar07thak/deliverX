@@ -452,4 +452,504 @@ public class ComplaintService : IComplaintService
             IsAvailable = inspector.IsAvailable
         };
     }
+
+    // ========== AUTO-ASSIGNMENT ==========
+
+    public async Task<AutoAssignmentResult> AutoAssignComplaintAsync(Guid complaintId, CancellationToken ct = default)
+    {
+        var complaint = await _context.Complaints
+            .Include(c => c.Delivery)
+            .FirstOrDefaultAsync(c => c.Id == complaintId, ct);
+
+        if (complaint == null)
+        {
+            return new AutoAssignmentResult { IsSuccess = false, Message = "Complaint not found" };
+        }
+
+        if (complaint.AssignedToId.HasValue)
+        {
+            return new AutoAssignmentResult { IsSuccess = false, Message = "Complaint already assigned" };
+        }
+
+        // Find best available inspector based on:
+        // 1. Lowest active cases
+        // 2. Best resolution rate
+        var inspectors = await _context.Inspectors
+            .Where(i => i.IsAvailable && i.ActiveCases < 10) // Max 10 active cases per inspector
+            .OrderBy(i => i.ActiveCases) // Order by workload
+            .ThenByDescending(i => i.ResolutionRate) // Then by success rate
+            .ToListAsync(ct);
+
+        if (!inspectors.Any())
+        {
+            return new AutoAssignmentResult { IsSuccess = false, Message = "No available inspectors" };
+        }
+
+        var bestInspector = inspectors.First();
+
+        // Assign the complaint
+        complaint.AssignedToId = bestInspector.UserId;
+        complaint.AssignedAt = DateTime.UtcNow;
+        complaint.Status = "ASSIGNED";
+        complaint.UpdatedAt = DateTime.UtcNow;
+
+        bestInspector.ActiveCases++;
+        bestInspector.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Auto-assigned complaint {ComplaintId} to inspector {InspectorId}", complaintId, bestInspector.Id);
+
+        return new AutoAssignmentResult
+        {
+            IsSuccess = true,
+            AssignedInspectorId = bestInspector.Id,
+            InspectorName = bestInspector.Name,
+            Message = "Complaint assigned successfully",
+            Reason = $"Best available with {bestInspector.ActiveCases} active cases and {bestInspector.ResolutionRate:P0} resolution rate"
+        };
+    }
+
+    // ========== FIELD VISIT OPERATIONS ==========
+
+    public async Task<FieldVisitDto?> ScheduleFieldVisitAsync(Guid inspectorId, ScheduleFieldVisitRequest request, CancellationToken ct = default)
+    {
+        var inspector = await _context.Inspectors.FirstOrDefaultAsync(i => i.UserId == inspectorId, ct);
+        if (inspector == null)
+        {
+            _logger.LogWarning("Inspector not found for user {UserId}", inspectorId);
+            return null;
+        }
+
+        var complaint = await _context.Complaints.FindAsync(new object[] { request.ComplaintId }, ct);
+        if (complaint == null)
+        {
+            _logger.LogWarning("Complaint not found {ComplaintId}", request.ComplaintId);
+            return null;
+        }
+
+        var fieldVisit = new FieldVisit
+        {
+            Id = Guid.NewGuid(),
+            ComplaintId = request.ComplaintId,
+            InspectorId = inspector.Id,
+            ScheduledAt = request.ScheduledAt,
+            Address = request.Address,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            Notes = request.Notes,
+            Status = "SCHEDULED",
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.FieldVisits.Add(fieldVisit);
+
+        // Update complaint status if needed
+        if (complaint.Status == "ASSIGNED")
+        {
+            complaint.Status = "IN_PROGRESS";
+            complaint.UpdatedAt = DateTime.UtcNow;
+        }
+
+        await _context.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Field visit scheduled for complaint {ComplaintId} at {ScheduledAt}", request.ComplaintId, request.ScheduledAt);
+
+        return MapFieldVisitToDto(fieldVisit, complaint.ComplaintNumber, inspector.Name);
+    }
+
+    public async Task<FieldVisitDto?> GetFieldVisitAsync(Guid fieldVisitId, CancellationToken ct = default)
+    {
+        var visit = await _context.FieldVisits
+            .Include(v => v.Complaint)
+            .Include(v => v.Inspector)
+            .Include(v => v.Evidences)
+            .FirstOrDefaultAsync(v => v.Id == fieldVisitId, ct);
+
+        if (visit == null) return null;
+
+        return MapFieldVisitToDto(visit, visit.Complaint?.ComplaintNumber, visit.Inspector?.Name);
+    }
+
+    public async Task<List<FieldVisitDto>> GetFieldVisitsForComplaintAsync(Guid complaintId, CancellationToken ct = default)
+    {
+        var visits = await _context.FieldVisits
+            .Include(v => v.Inspector)
+            .Include(v => v.Evidences)
+            .Where(v => v.ComplaintId == complaintId)
+            .OrderByDescending(v => v.ScheduledAt)
+            .ToListAsync(ct);
+
+        var complaint = await _context.Complaints.FindAsync(new object[] { complaintId }, ct);
+
+        return visits.Select(v => MapFieldVisitToDto(v, complaint?.ComplaintNumber, v.Inspector?.Name)).ToList();
+    }
+
+    public async Task<List<FieldVisitDto>> GetFieldVisitsForInspectorAsync(Guid inspectorId, DateTime? fromDate = null, CancellationToken ct = default)
+    {
+        var inspector = await _context.Inspectors.FirstOrDefaultAsync(i => i.UserId == inspectorId, ct);
+        if (inspector == null) return new List<FieldVisitDto>();
+
+        var query = _context.FieldVisits
+            .Include(v => v.Complaint)
+            .Include(v => v.Evidences)
+            .Where(v => v.InspectorId == inspector.Id);
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(v => v.ScheduledAt >= fromDate.Value);
+        }
+
+        var visits = await query.OrderByDescending(v => v.ScheduledAt).ToListAsync(ct);
+
+        return visits.Select(v => MapFieldVisitToDto(v, v.Complaint?.ComplaintNumber, inspector.Name)).ToList();
+    }
+
+    public async Task<bool> StartFieldVisitAsync(Guid fieldVisitId, decimal latitude, decimal longitude, CancellationToken ct = default)
+    {
+        var visit = await _context.FieldVisits.FindAsync(new object[] { fieldVisitId }, ct);
+        if (visit == null || visit.Status != "SCHEDULED") return false;
+
+        visit.Status = "IN_PROGRESS";
+        visit.StartedAt = DateTime.UtcNow;
+        visit.Latitude = latitude;
+        visit.Longitude = longitude;
+        visit.UpdatedAt = DateTime.UtcNow;
+
+        // Add GPS evidence
+        var gpsEvidence = new FieldVisitEvidence
+        {
+            Id = Guid.NewGuid(),
+            FieldVisitId = fieldVisitId,
+            Type = "GPS_LOCATION",
+            Latitude = latitude,
+            Longitude = longitude,
+            Description = "Field visit start location",
+            CapturedAt = DateTime.UtcNow
+        };
+        _context.FieldVisitEvidences.Add(gpsEvidence);
+
+        await _context.SaveChangesAsync(ct);
+        _logger.LogInformation("Field visit {FieldVisitId} started at ({Lat}, {Lng})", fieldVisitId, latitude, longitude);
+        return true;
+    }
+
+    public async Task<bool> CompleteFieldVisitAsync(Guid fieldVisitId, CompleteFieldVisitRequest request, CancellationToken ct = default)
+    {
+        var visit = await _context.FieldVisits.FindAsync(new object[] { fieldVisitId }, ct);
+        if (visit == null || visit.Status != "IN_PROGRESS") return false;
+
+        visit.Status = "COMPLETED";
+        visit.CompletedAt = DateTime.UtcNow;
+        visit.Notes = request.Notes;
+        visit.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+        _logger.LogInformation("Field visit {FieldVisitId} completed", fieldVisitId);
+        return true;
+    }
+
+    public async Task<bool> CancelFieldVisitAsync(Guid fieldVisitId, CancelFieldVisitRequest request, CancellationToken ct = default)
+    {
+        var visit = await _context.FieldVisits.FindAsync(new object[] { fieldVisitId }, ct);
+        if (visit == null || visit.Status == "COMPLETED") return false;
+
+        visit.Status = "CANCELLED";
+        visit.CancellationReason = request.Reason;
+        visit.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+        _logger.LogInformation("Field visit {FieldVisitId} cancelled: {Reason}", fieldVisitId, request.Reason);
+        return true;
+    }
+
+    public async Task<bool> AddFieldVisitEvidenceAsync(Guid fieldVisitId, AddFieldVisitEvidenceRequest request, CancellationToken ct = default)
+    {
+        var visit = await _context.FieldVisits.FindAsync(new object[] { fieldVisitId }, ct);
+        if (visit == null) return false;
+
+        var evidence = new FieldVisitEvidence
+        {
+            Id = Guid.NewGuid(),
+            FieldVisitId = fieldVisitId,
+            Type = request.Type,
+            FileName = request.FileName,
+            FileUrl = request.FileUrl,
+            Latitude = request.Latitude,
+            Longitude = request.Longitude,
+            Description = request.Description,
+            CapturedAt = DateTime.UtcNow
+        };
+
+        _context.FieldVisitEvidences.Add(evidence);
+        visit.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+        _logger.LogInformation("Evidence added to field visit {FieldVisitId}: {Type}", fieldVisitId, request.Type);
+        return true;
+    }
+
+    // ========== INVESTIGATION REPORT OPERATIONS ==========
+
+    public async Task<InvestigationReportDto?> SubmitInvestigationReportAsync(Guid inspectorId, SubmitInvestigationReportRequest request, CancellationToken ct = default)
+    {
+        var inspector = await _context.Inspectors.FirstOrDefaultAsync(i => i.UserId == inspectorId, ct);
+        if (inspector == null)
+        {
+            _logger.LogWarning("Inspector not found for user {UserId}", inspectorId);
+            return null;
+        }
+
+        var complaint = await _context.Complaints.FindAsync(new object[] { request.ComplaintId }, ct);
+        if (complaint == null)
+        {
+            _logger.LogWarning("Complaint not found {ComplaintId}", request.ComplaintId);
+            return null;
+        }
+
+        // Check if report already exists
+        var existingReport = await _context.InvestigationReports.FirstOrDefaultAsync(r => r.ComplaintId == request.ComplaintId, ct);
+        if (existingReport != null)
+        {
+            _logger.LogWarning("Investigation report already exists for complaint {ComplaintId}", request.ComplaintId);
+            return null;
+        }
+
+        var report = new InvestigationReport
+        {
+            Id = Guid.NewGuid(),
+            ComplaintId = request.ComplaintId,
+            InspectorId = inspector.Id,
+            Findings = request.Findings,
+            Verdict = request.Verdict,
+            VerdictReason = request.VerdictReason,
+            RecommendedAction = request.RecommendedAction,
+            CompensationAmount = request.CompensationAmount,
+            PenaltyType = request.PenaltyType,
+            PenaltyAmount = request.PenaltyAmount,
+            PenaltyAppliedToId = request.PenaltyAppliedToId,
+            IsApproved = false,
+            SubmittedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
+        _context.InvestigationReports.Add(report);
+        await _context.SaveChangesAsync(ct);
+
+        _logger.LogInformation("Investigation report submitted for complaint {ComplaintId} with verdict {Verdict}", request.ComplaintId, request.Verdict);
+
+        return MapReportToDto(report, complaint.ComplaintNumber, inspector.Name, null, null);
+    }
+
+    public async Task<InvestigationReportDto?> GetInvestigationReportAsync(Guid complaintId, CancellationToken ct = default)
+    {
+        var report = await _context.InvestigationReports
+            .Include(r => r.Complaint)
+            .Include(r => r.Inspector)
+            .Include(r => r.ApprovedBy)
+            .FirstOrDefaultAsync(r => r.ComplaintId == complaintId, ct);
+
+        if (report == null) return null;
+
+        string? penaltyUserName = null;
+        if (report.PenaltyAppliedToId.HasValue)
+        {
+            var user = await _context.Users.FindAsync(new object[] { report.PenaltyAppliedToId.Value }, ct);
+            penaltyUserName = user?.FullName;
+        }
+
+        return MapReportToDto(report, report.Complaint?.ComplaintNumber, report.Inspector?.Name, report.ApprovedBy?.FullName, penaltyUserName);
+    }
+
+    public async Task<bool> ApproveInvestigationReportAsync(Guid reportId, Guid approverId, ApproveInvestigationReportRequest request, CancellationToken ct = default)
+    {
+        var report = await _context.InvestigationReports
+            .Include(r => r.Complaint)
+            .FirstOrDefaultAsync(r => r.Id == reportId, ct);
+
+        if (report == null) return false;
+
+        report.IsApproved = request.Approved;
+        report.ApprovedById = approverId;
+        report.ApprovedAt = DateTime.UtcNow;
+        report.UpdatedAt = DateTime.UtcNow;
+
+        if (request.Approved && report.Complaint != null)
+        {
+            // Resolve the complaint based on the approved verdict
+            report.Complaint.Status = "RESOLVED";
+            report.Complaint.Resolution = report.RecommendedAction;
+            report.Complaint.ResolutionNotes = $"Verdict: {report.Verdict}. {report.VerdictReason}";
+            report.Complaint.ResolvedAt = DateTime.UtcNow;
+            report.Complaint.UpdatedAt = DateTime.UtcNow;
+
+            // Update inspector stats
+            var inspector = await _context.Inspectors.FindAsync(new object[] { report.InspectorId }, ct);
+            if (inspector != null)
+            {
+                inspector.ActiveCases = Math.Max(0, inspector.ActiveCases - 1);
+                inspector.TotalCasesHandled++;
+                inspector.UpdatedAt = DateTime.UtcNow;
+            }
+        }
+
+        await _context.SaveChangesAsync(ct);
+        _logger.LogInformation("Investigation report {ReportId} {Status} by {ApproverId}", reportId, request.Approved ? "approved" : "rejected", approverId);
+        return true;
+    }
+
+    // ========== SLA MANAGEMENT ==========
+
+    public async Task<SLAStatusDto?> GetSLAStatusAsync(Guid complaintId, CancellationToken ct = default)
+    {
+        var complaint = await _context.Complaints.FindAsync(new object[] { complaintId }, ct);
+        if (complaint == null) return null;
+
+        // Get SLA config for this complaint's category and severity
+        var slaConfig = await _context.ComplaintSLAConfigs
+            .FirstOrDefaultAsync(s => s.Category == complaint.Category && s.Severity == complaint.Severity && s.IsActive, ct);
+
+        // Default SLA if not configured
+        var responseTimeHours = slaConfig?.ResponseTimeHours ?? 24;
+        var resolutionTimeHours = slaConfig?.ResolutionTimeHours ?? 72;
+
+        var elapsedHours = (int)(DateTime.UtcNow - complaint.CreatedAt).TotalHours;
+        var hasResponse = complaint.AssignedAt.HasValue;
+        var responseHours = hasResponse ? (int)(complaint.AssignedAt!.Value - complaint.CreatedAt).TotalHours : elapsedHours;
+
+        return new SLAStatusDto
+        {
+            ComplaintId = complaintId,
+            ResponseTimeHours = responseTimeHours,
+            ResolutionTimeHours = resolutionTimeHours,
+            ElapsedHours = elapsedHours,
+            ResponseSLABreached = responseHours > responseTimeHours,
+            ResolutionSLABreached = elapsedHours > resolutionTimeHours && complaint.ResolvedAt == null,
+            HoursUntilResponseBreach = hasResponse ? 0 : Math.Max(0, responseTimeHours - elapsedHours),
+            HoursUntilResolutionBreach = complaint.ResolvedAt.HasValue ? 0 : Math.Max(0, resolutionTimeHours - elapsedHours)
+        };
+    }
+
+    public async Task<List<SLABreachDto>> GetSLABreachesAsync(DateTime? fromDate = null, bool pendingOnly = false, CancellationToken ct = default)
+    {
+        var query = _context.SLABreaches
+            .Include(s => s.Complaint)
+            .AsQueryable();
+
+        if (fromDate.HasValue)
+        {
+            query = query.Where(s => s.BreachedAt >= fromDate.Value);
+        }
+
+        if (pendingOnly)
+        {
+            query = query.Where(s => !s.IsEscalated);
+        }
+
+        var breaches = await query.OrderByDescending(s => s.BreachedAt).ToListAsync(ct);
+
+        var result = new List<SLABreachDto>();
+        foreach (var breach in breaches)
+        {
+            string? escalatedToName = null;
+            if (breach.EscalatedToId.HasValue)
+            {
+                var user = await _context.Users.FindAsync(new object[] { breach.EscalatedToId.Value }, ct);
+                escalatedToName = user?.FullName;
+            }
+
+            result.Add(new SLABreachDto
+            {
+                Id = breach.Id,
+                ComplaintId = breach.ComplaintId,
+                ComplaintNumber = breach.Complaint?.ComplaintNumber,
+                BreachType = breach.BreachType,
+                ExpectedHours = breach.ExpectedHours,
+                ActualHours = breach.ActualHours,
+                BreachedAt = breach.BreachedAt,
+                IsEscalated = breach.IsEscalated,
+                EscalatedToId = breach.EscalatedToId,
+                EscalatedToName = escalatedToName,
+                EscalatedAt = breach.EscalatedAt
+            });
+        }
+
+        return result;
+    }
+
+    public async Task<bool> EscalateSLABreachAsync(Guid breachId, Guid escalateToId, CancellationToken ct = default)
+    {
+        var breach = await _context.SLABreaches.FindAsync(new object[] { breachId }, ct);
+        if (breach == null) return false;
+
+        breach.IsEscalated = true;
+        breach.EscalatedToId = escalateToId;
+        breach.EscalatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync(ct);
+        _logger.LogInformation("SLA breach {BreachId} escalated to {UserId}", breachId, escalateToId);
+        return true;
+    }
+
+    // ========== HELPER METHODS ==========
+
+    private FieldVisitDto MapFieldVisitToDto(FieldVisit visit, string? complaintNumber, string? inspectorName)
+    {
+        return new FieldVisitDto
+        {
+            Id = visit.Id,
+            ComplaintId = visit.ComplaintId,
+            ComplaintNumber = complaintNumber,
+            InspectorId = visit.InspectorId,
+            InspectorName = inspectorName,
+            ScheduledAt = visit.ScheduledAt,
+            StartedAt = visit.StartedAt,
+            CompletedAt = visit.CompletedAt,
+            Status = visit.Status,
+            Address = visit.Address,
+            Latitude = visit.Latitude,
+            Longitude = visit.Longitude,
+            Notes = visit.Notes,
+            CancellationReason = visit.CancellationReason,
+            CreatedAt = visit.CreatedAt,
+            Evidences = visit.Evidences.Select(e => new FieldVisitEvidenceDto
+            {
+                Id = e.Id,
+                Type = e.Type,
+                FileName = e.FileName,
+                FileUrl = e.FileUrl,
+                Latitude = e.Latitude,
+                Longitude = e.Longitude,
+                Description = e.Description,
+                CapturedAt = e.CapturedAt
+            }).ToList()
+        };
+    }
+
+    private InvestigationReportDto MapReportToDto(InvestigationReport report, string? complaintNumber, string? inspectorName, string? approvedByName, string? penaltyUserName)
+    {
+        return new InvestigationReportDto
+        {
+            Id = report.Id,
+            ComplaintId = report.ComplaintId,
+            ComplaintNumber = complaintNumber,
+            InspectorId = report.InspectorId,
+            InspectorName = inspectorName,
+            Findings = report.Findings,
+            Verdict = report.Verdict,
+            VerdictReason = report.VerdictReason,
+            RecommendedAction = report.RecommendedAction,
+            CompensationAmount = report.CompensationAmount,
+            PenaltyType = report.PenaltyType,
+            PenaltyAmount = report.PenaltyAmount,
+            PenaltyAppliedToId = report.PenaltyAppliedToId,
+            PenaltyAppliedToName = penaltyUserName,
+            IsApproved = report.IsApproved,
+            ApprovedById = report.ApprovedById,
+            ApprovedByName = approvedByName,
+            ApprovedAt = report.ApprovedAt,
+            SubmittedAt = report.SubmittedAt
+        };
+    }
 }

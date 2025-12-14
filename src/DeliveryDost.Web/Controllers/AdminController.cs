@@ -547,4 +547,198 @@ public class AdminController : Controller
     }
 
     #endregion
+
+    #region Stakeholder Onboarding
+
+    /// <summary>
+    /// Stakeholder Onboarding Dashboard - Main page showing stats and quick actions
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> StakeholderOnboarding()
+    {
+        try
+        {
+            var stats = await _dashboardService.GetOnboardingStatsAsync(CancellationToken.None);
+            var availableDPCMs = await _dashboardService.GetAvailableDPCMsAsync(CancellationToken.None);
+
+            var model = new StakeholderOnboardingViewModel
+            {
+                Stats = stats,
+                AvailableDPCMs = availableDPCMs
+            };
+
+            ViewData["Title"] = "Stakeholder Onboarding";
+            return View(model);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error loading stakeholder onboarding page");
+            TempData["Error"] = "Failed to load onboarding data";
+            return View(new StakeholderOnboardingViewModel());
+        }
+    }
+
+    /// <summary>
+    /// Register a new stakeholder (DPCM, DP, BC, EC)
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> RegisterStakeholder(RegisterStakeholderViewModel model)
+    {
+        try
+        {
+            if (!ModelState.IsValid)
+            {
+                TempData["Error"] = "Please fill all required fields";
+                return RedirectToAction(nameof(StakeholderOnboarding));
+            }
+
+            var adminId = GetUserId();
+            var request = new RegisterStakeholderRequest
+            {
+                Phone = model.Phone,
+                Role = model.Role,
+                FullName = model.FullName,
+                Email = model.Email,
+                Address = model.Address,
+                City = model.City,
+                State = model.State,
+                Pincode = model.Pincode,
+                BusinessName = model.BusinessName,
+                BusinessType = model.BusinessType,
+                GSTIN = model.GSTIN,
+                BusinessPAN = model.BusinessPAN,
+                CommissionType = model.CommissionType,
+                CommissionValue = model.CommissionValue,
+                SecurityDeposit = model.SecurityDeposit,
+                ServiceRegions = model.ServiceRegions?.Split(',').Select(s => s.Trim()).ToList(),
+                DPCMId = model.DPCMId,
+                VehicleType = model.VehicleType,
+                VehicleNumber = model.VehicleNumber,
+                ServicePincodes = model.ServicePincodes?.Split(',').Select(s => s.Trim()).ToList(),
+                SendWelcomeSms = model.SendWelcomeSms,
+                AutoCreateWallet = model.AutoCreateWallet,
+                SkipKYC = model.SkipKYC,
+                Notes = model.Notes
+            };
+
+            var result = await _dashboardService.RegisterStakeholderAsync(request, adminId, CancellationToken.None);
+
+            if (result.Success)
+            {
+                TempData["Success"] = result.Message;
+            }
+            else
+            {
+                TempData["Error"] = result.Message;
+            }
+
+            return RedirectToAction(nameof(StakeholderOnboarding));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error registering stakeholder");
+            TempData["Error"] = "Failed to register stakeholder";
+            return RedirectToAction(nameof(StakeholderOnboarding));
+        }
+    }
+
+    /// <summary>
+    /// Stakeholder List with drill-down
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> Stakeholders(
+        string? role = null,
+        string? status = null,
+        string? search = null,
+        int page = 1,
+        int pageSize = 20)
+    {
+        try
+        {
+            var request = new StakeholderListRequest
+            {
+                Role = role,
+                Status = status,
+                SearchTerm = search,
+                Page = page,
+                PageSize = pageSize,
+                SortDesc = true
+            };
+
+            var response = await _dashboardService.GetStakeholdersAsync(request, CancellationToken.None);
+
+            var model = new StakeholdersListViewModel
+            {
+                Stakeholders = response.Items,
+                TotalCount = response.TotalCount,
+                Page = response.Page,
+                PageSize = response.PageSize,
+                TotalPages = response.TotalPages,
+                RoleFilter = role,
+                StatusFilter = status,
+                SearchTerm = search,
+                TotalDPCMs = response.TotalDPCMs,
+                TotalDPs = response.TotalDPs,
+                TotalBCs = response.TotalBCs,
+                TotalECs = response.TotalECs,
+                PendingKYC = response.PendingKYC
+            };
+
+            ViewData["Title"] = "Stakeholder List";
+            return View(model);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching stakeholders");
+            TempData["Error"] = "Failed to load stakeholders";
+            return View(new StakeholdersListViewModel());
+        }
+    }
+
+    /// <summary>
+    /// Stakeholder Detail View
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> StakeholderDetail(Guid id)
+    {
+        try
+        {
+            var detail = await _dashboardService.GetStakeholderDetailAsync(id, CancellationToken.None);
+            if (detail == null)
+            {
+                TempData["Error"] = "Stakeholder not found";
+                return RedirectToAction(nameof(Stakeholders));
+            }
+
+            ViewData["Title"] = $"Stakeholder - {detail.FullName}";
+            return View(detail);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching stakeholder detail for {Id}", id);
+            TempData["Error"] = "Failed to load stakeholder details";
+            return RedirectToAction(nameof(Stakeholders));
+        }
+    }
+
+    /// <summary>
+    /// Get available DPCMs for dropdown (AJAX)
+    /// </summary>
+    [HttpGet]
+    public async Task<IActionResult> GetAvailableDPCMs()
+    {
+        try
+        {
+            var dpcms = await _dashboardService.GetAvailableDPCMsAsync(CancellationToken.None);
+            return Json(dpcms);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error fetching available DPCMs");
+            return Json(new List<AvailableDPCMDto>());
+        }
+    }
+
+    #endregion
 }

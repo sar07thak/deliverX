@@ -402,3 +402,269 @@ public class UpdateDPStatusRequest
 {
     public bool IsActive { get; set; }
 }
+
+// ===================================================
+// STAKEHOLDER ONBOARDING DTOs
+// ===================================================
+
+/// <summary>
+/// Request to register a new stakeholder by admin
+/// </summary>
+public class RegisterStakeholderRequest
+{
+    // Basic Info
+    public string Phone { get; set; } = string.Empty;
+    public string Role { get; set; } = string.Empty; // DPCM, DP, BC, EC
+    public string FullName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+
+    // Address
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? Pincode { get; set; }
+
+    // KYC Documents (Optional - can be uploaded later)
+    public string? AadhaarNumber { get; set; }
+    public string? PANNumber { get; set; }
+
+    // Business Details (for BC/DPCM)
+    public string? BusinessName { get; set; }
+    public string? BusinessType { get; set; }
+    public string? GSTIN { get; set; }
+    public string? BusinessPAN { get; set; }
+
+    // DPCM Specific
+    public string? CommissionType { get; set; } // PERCENTAGE, FIXED
+    public decimal? CommissionValue { get; set; }
+    public decimal? SecurityDeposit { get; set; }
+    public List<string>? ServiceRegions { get; set; } // Pincodes or areas
+
+    // DP Specific
+    public Guid? DPCMId { get; set; } // Optional - can be linked to DPCM
+    public string? VehicleType { get; set; }
+    public string? VehicleNumber { get; set; }
+    public List<string>? ServicePincodes { get; set; }
+
+    // BC Specific
+    public string? SubscriptionPlanId { get; set; }
+
+    // Options
+    public bool SendWelcomeSms { get; set; } = true;
+    public bool AutoCreateWallet { get; set; } = true;
+    public bool SkipKYC { get; set; } = false; // Admin can skip KYC for trusted stakeholders
+    public string? Notes { get; set; }
+}
+
+/// <summary>
+/// Response after stakeholder registration
+/// </summary>
+public class RegisterStakeholderResponse
+{
+    public bool Success { get; set; }
+    public Guid? UserId { get; set; }
+    public string? Phone { get; set; }
+    public string? Role { get; set; }
+    public string? TempPassword { get; set; } // Optional temporary password
+    public string? Message { get; set; }
+    public List<string>? Errors { get; set; }
+}
+
+/// <summary>
+/// Stakeholder list with role-specific details
+/// </summary>
+public class StakeholderListRequest
+{
+    public string? Role { get; set; } // Filter by role
+    public string? Status { get; set; } // Active, Inactive, Pending
+    public string? KYCStatus { get; set; } // VERIFIED, PENDING, REJECTED
+    public string? SearchTerm { get; set; } // Phone, Name, Email
+    public DateTime? RegisteredFrom { get; set; }
+    public DateTime? RegisteredTo { get; set; }
+    public Guid? DPCMId { get; set; } // Filter DPs by DPCM
+    public int Page { get; set; } = 1;
+    public int PageSize { get; set; } = 20;
+    public string? SortBy { get; set; }
+    public bool SortDesc { get; set; }
+}
+
+public class StakeholderListResponse
+{
+    public List<StakeholderListItemDto> Items { get; set; } = new();
+    public int TotalCount { get; set; }
+    public int Page { get; set; }
+    public int PageSize { get; set; }
+    public int TotalPages => (int)Math.Ceiling((double)TotalCount / PageSize);
+
+    // Summary counts
+    public int TotalDPCMs { get; set; }
+    public int TotalDPs { get; set; }
+    public int TotalBCs { get; set; }
+    public int TotalECs { get; set; }
+    public int PendingKYC { get; set; }
+}
+
+public class StakeholderListItemDto
+{
+    public Guid Id { get; set; }
+    public string Phone { get; set; } = string.Empty;
+    public string PhoneMasked { get; set; } = string.Empty; // ****1234
+    public string FullName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string? EmailMasked { get; set; }
+    public string Role { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string KYCStatus { get; set; } = string.Empty;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+
+    // Role-specific fields
+    public string? BusinessName { get; set; } // BC, DPCM
+    public string? VehicleType { get; set; } // DP
+    public string? DPCMName { get; set; } // DP's manager
+    public int TotalDeliveries { get; set; }
+    public decimal? Rating { get; set; }
+    public decimal? WalletBalance { get; set; }
+    public bool IsOnline { get; set; } // DP only
+}
+
+/// <summary>
+/// Detailed stakeholder view for admin
+/// </summary>
+public class StakeholderDetailDto
+{
+    // Basic Info
+    public Guid Id { get; set; }
+    public string Phone { get; set; } = string.Empty;
+    public string FullName { get; set; } = string.Empty;
+    public string? Email { get; set; }
+    public string Role { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public DateTime? DateOfBirth { get; set; }
+    public string? Gender { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public DateTime? LastLoginAt { get; set; }
+
+    // Address
+    public string? Address { get; set; }
+    public string? City { get; set; }
+    public string? State { get; set; }
+    public string? Pincode { get; set; }
+
+    // KYC Info
+    public string KYCStatus { get; set; } = string.Empty;
+    public bool AadhaarVerified { get; set; }
+    public bool PANVerified { get; set; }
+    public string? AadhaarMasked { get; set; }
+    public string? PANMasked { get; set; }
+    public DateTime? KYCVerifiedAt { get; set; }
+
+    // Wallet Info
+    public decimal WalletBalance { get; set; }
+    public decimal TotalEarnings { get; set; }
+    public decimal TotalSpent { get; set; }
+
+    // Activity Stats
+    public int TotalDeliveries { get; set; }
+    public int CompletedDeliveries { get; set; }
+    public int CancelledDeliveries { get; set; }
+    public decimal? Rating { get; set; }
+    public int RatingCount { get; set; }
+
+    // Role-specific details
+    public DPCMDetailDto? DPCMDetails { get; set; }
+    public DPDetailDto? DPDetails { get; set; }
+    public BCDetailDto? BCDetails { get; set; }
+
+    // Recent Activity
+    public List<RecentActivityDto> RecentActivities { get; set; } = new();
+}
+
+public class DPCMDetailDto
+{
+    public string? BusinessName { get; set; }
+    public string CommissionType { get; set; } = string.Empty;
+    public decimal CommissionValue { get; set; }
+    public decimal SecurityDeposit { get; set; }
+    public int ManagedDPsCount { get; set; }
+    public int ActiveDPsCount { get; set; }
+    public List<string> ServiceRegions { get; set; } = new();
+    public decimal TotalCommissionEarned { get; set; }
+}
+
+public class DPDetailDto
+{
+    public Guid? DPCMId { get; set; }
+    public string? DPCMName { get; set; }
+    public string? VehicleType { get; set; }
+    public string? VehicleNumber { get; set; }
+    public List<string> ServicePincodes { get; set; } = new();
+    public decimal? ServiceRadiusKm { get; set; }
+    public bool IsOnline { get; set; }
+    public DateTime? LastActiveAt { get; set; }
+    public decimal BehaviorIndex { get; set; }
+    public int OnTimeDeliveryPercent { get; set; }
+}
+
+public class BCDetailDto
+{
+    public string? BusinessName { get; set; }
+    public string? BusinessType { get; set; }
+    public string? GSTIN { get; set; }
+    public string? BusinessPAN { get; set; }
+    public string? SubscriptionPlan { get; set; }
+    public DateTime? SubscriptionExpiry { get; set; }
+    public bool HasAPIAccess { get; set; }
+    public int? APIKeyCount { get; set; }
+    public int PickupLocationCount { get; set; }
+}
+
+public class RecentActivityDto
+{
+    public string ActivityType { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public DateTime OccurredAt { get; set; }
+    public Guid? ReferenceId { get; set; }
+}
+
+/// <summary>
+/// Available DPCMs for linking DPs
+/// </summary>
+public class AvailableDPCMDto
+{
+    public Guid Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string? BusinessName { get; set; }
+    public int ManagedDPsCount { get; set; }
+    public List<string> ServiceRegions { get; set; } = new();
+}
+
+/// <summary>
+/// Onboarding statistics for admin dashboard
+/// </summary>
+public class OnboardingStatsDto
+{
+    public int TotalStakeholders { get; set; }
+    public int RegisteredToday { get; set; }
+    public int RegisteredThisWeek { get; set; }
+    public int RegisteredThisMonth { get; set; }
+    public int PendingKYC { get; set; }
+    public int PendingApproval { get; set; }
+
+    public RoleStatsDto DPCMStats { get; set; } = new();
+    public RoleStatsDto DPStats { get; set; } = new();
+    public RoleStatsDto BCStats { get; set; } = new();
+    public RoleStatsDto ECStats { get; set; } = new();
+}
+
+public class RoleStatsDto
+{
+    public int Total { get; set; }
+    public int Active { get; set; }
+    public int Inactive { get; set; }
+    public int PendingKYC { get; set; }
+    public int NewThisMonth { get; set; }
+}

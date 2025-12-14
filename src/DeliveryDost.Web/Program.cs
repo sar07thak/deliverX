@@ -24,7 +24,13 @@ builder.Services.AddEndpointsApiExplorer();
 // ===========================================
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseSqlServer(connectionString)
+    options.UseSqlServer(connectionString, sqlServerOptions =>
+        sqlServerOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(30),
+            errorNumbersToAdd: null
+        )
+    )
 );
 
 // ===========================================
@@ -134,6 +140,18 @@ builder.Services.AddScoped<IWalletService, WalletService>();
 builder.Services.AddScoped<ISubscriptionService, SubscriptionService>();
 builder.Services.AddScoped<IReferralService, ReferralService>();
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IDistanceCalculatorService, DistanceCalculatorService>();
+builder.Services.AddScoped<IBiddingService, BiddingService>();
+builder.Services.AddScoped<ISavedAddressService, SavedAddressService>();
+builder.Services.AddScoped<ICourierService, CourierService>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+// ===========================================
+// Background Services
+// ===========================================
+builder.Services.AddHostedService<BidAutoSelectionService>();
+builder.Services.AddHostedService<SettlementAutomationService>();
+builder.Services.AddHostedService<ShipmentTrackingService>();
 
 // ===========================================
 // Master Data & Reports Services
@@ -145,6 +163,22 @@ builder.Services.AddScoped<ISuperAdminReportService, SuperAdminReportService>();
 // DPCM Management Services
 // ===========================================
 builder.Services.AddScoped<IDPCMManagementService, DPCMManagementService>();
+
+// ===========================================
+// BC API Integration Services
+// ===========================================
+builder.Services.AddScoped<IBCApiService, BCApiService>();
+builder.Services.AddHttpClient(); // For webhook delivery
+
+// ===========================================
+// Pool Routes & Fleet Management
+// ===========================================
+builder.Services.AddScoped<IPoolRouteService, PoolRouteService>();
+
+// ===========================================
+// News & Notification Services
+// ===========================================
+builder.Services.AddScoped<INotificationService, NotificationService>();
 
 // ===========================================
 // External API Clients (Mock for MVP)

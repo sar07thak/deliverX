@@ -158,3 +158,147 @@ public class CreateInspectorRequest
     public string Phone { get; set; } = string.Empty;
     public string? Zone { get; set; }
 }
+
+// Field Visit DTOs
+public class ScheduleFieldVisitRequest
+{
+    public Guid ComplaintId { get; set; }
+    public DateTime ScheduledAt { get; set; }
+    public string? Address { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Notes { get; set; }
+}
+
+public class FieldVisitDto
+{
+    public Guid Id { get; set; }
+    public Guid ComplaintId { get; set; }
+    public string? ComplaintNumber { get; set; }
+    public Guid InspectorId { get; set; }
+    public string? InspectorName { get; set; }
+    public DateTime ScheduledAt { get; set; }
+    public DateTime? StartedAt { get; set; }
+    public DateTime? CompletedAt { get; set; }
+    public string Status { get; set; } = string.Empty;
+    public string? Address { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Notes { get; set; }
+    public string? CancellationReason { get; set; }
+    public DateTime CreatedAt { get; set; }
+    public List<FieldVisitEvidenceDto> Evidences { get; set; } = new();
+}
+
+public class FieldVisitEvidenceDto
+{
+    public Guid Id { get; set; }
+    public string Type { get; set; } = string.Empty;
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Description { get; set; }
+    public DateTime CapturedAt { get; set; }
+}
+
+public class AddFieldVisitEvidenceRequest
+{
+    public string Type { get; set; } = string.Empty; // PHOTO, GPS_LOCATION, SIGNATURE, AUDIO, VIDEO
+    public string? FileName { get; set; }
+    public string? FileUrl { get; set; }
+    public decimal? Latitude { get; set; }
+    public decimal? Longitude { get; set; }
+    public string? Description { get; set; }
+}
+
+public class CompleteFieldVisitRequest
+{
+    public string Notes { get; set; } = string.Empty;
+}
+
+public class CancelFieldVisitRequest
+{
+    public string Reason { get; set; } = string.Empty;
+}
+
+// Investigation Report DTOs
+public class SubmitInvestigationReportRequest
+{
+    public Guid ComplaintId { get; set; }
+    public string Findings { get; set; } = string.Empty;
+    public string Verdict { get; set; } = string.Empty; // VALID, INVALID, PARTIALLY_VALID, INCONCLUSIVE
+    public string? VerdictReason { get; set; }
+    public string? RecommendedAction { get; set; } // REFUND, COMPENSATION, WARNING, SUSPENSION, NO_ACTION
+    public decimal? CompensationAmount { get; set; }
+    public string? PenaltyType { get; set; } // WARNING, FINE, SUSPENSION, TERMINATION
+    public decimal? PenaltyAmount { get; set; }
+    public Guid? PenaltyAppliedToId { get; set; }
+}
+
+public class InvestigationReportDto
+{
+    public Guid Id { get; set; }
+    public Guid ComplaintId { get; set; }
+    public string? ComplaintNumber { get; set; }
+    public Guid InspectorId { get; set; }
+    public string? InspectorName { get; set; }
+    public string Findings { get; set; } = string.Empty;
+    public string Verdict { get; set; } = string.Empty;
+    public string? VerdictReason { get; set; }
+    public string? RecommendedAction { get; set; }
+    public decimal? CompensationAmount { get; set; }
+    public string? PenaltyType { get; set; }
+    public decimal? PenaltyAmount { get; set; }
+    public Guid? PenaltyAppliedToId { get; set; }
+    public string? PenaltyAppliedToName { get; set; }
+    public bool IsApproved { get; set; }
+    public Guid? ApprovedById { get; set; }
+    public string? ApprovedByName { get; set; }
+    public DateTime? ApprovedAt { get; set; }
+    public DateTime SubmittedAt { get; set; }
+}
+
+public class ApproveInvestigationReportRequest
+{
+    public bool Approved { get; set; }
+    public string? Comments { get; set; }
+}
+
+// SLA DTOs
+public class SLABreachDto
+{
+    public Guid Id { get; set; }
+    public Guid ComplaintId { get; set; }
+    public string? ComplaintNumber { get; set; }
+    public string BreachType { get; set; } = string.Empty;
+    public int ExpectedHours { get; set; }
+    public int ActualHours { get; set; }
+    public DateTime BreachedAt { get; set; }
+    public bool IsEscalated { get; set; }
+    public Guid? EscalatedToId { get; set; }
+    public string? EscalatedToName { get; set; }
+    public DateTime? EscalatedAt { get; set; }
+}
+
+public class SLAStatusDto
+{
+    public Guid ComplaintId { get; set; }
+    public int ResponseTimeHours { get; set; }
+    public int ResolutionTimeHours { get; set; }
+    public int ElapsedHours { get; set; }
+    public bool ResponseSLABreached { get; set; }
+    public bool ResolutionSLABreached { get; set; }
+    public int HoursUntilResponseBreach { get; set; }
+    public int HoursUntilResolutionBreach { get; set; }
+}
+
+// Auto-assignment DTOs
+public class AutoAssignmentResult
+{
+    public bool IsSuccess { get; set; }
+    public Guid? AssignedInspectorId { get; set; }
+    public string? InspectorName { get; set; }
+    public string? Message { get; set; }
+    public string? Reason { get; set; } // Why this inspector was chosen
+}

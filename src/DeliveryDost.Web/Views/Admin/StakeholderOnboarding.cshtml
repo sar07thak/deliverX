@@ -1,0 +1,392 @@
+@model DeliveryDost.Web.ViewModels.Admin.StakeholderOnboardingViewModel
+@{ ViewData["Title"] = "Stakeholder Onboarding"; }
+
+<div class="page-header">
+    <div class="d-flex justify-content-between align-items-center">
+        <div>
+            <h1 class="page-title"><i class="bi bi-person-plus me-2"></i>Stakeholder Onboarding</h1>
+            <p class="page-subtitle">Register new stakeholders (DPCM, DP, BC, EC)</p>
+        </div>
+        <a asp-action="Stakeholders" class="btn btn-outline-primary">
+            <i class="bi bi-list me-1"></i>View All Stakeholders
+        </a>
+    </div>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>@TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>@TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Stats Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-purple text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-1 opacity-75">DPCMs</h6>
+                        <h2 class="card-title mb-0">@Model.Stats.DPCMStats.Total</h2>
+                        <small class="opacity-75">@Model.Stats.DPCMStats.Active active</small>
+                    </div>
+                    <i class="bi bi-person-badge" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-dark">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-1 opacity-75">Delivery Partners</h6>
+                        <h2 class="card-title mb-0">@Model.Stats.DPStats.Total</h2>
+                        <small class="opacity-75">@Model.Stats.DPStats.Active active</small>
+                    </div>
+                    <i class="bi bi-bicycle" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-1 opacity-75">Business Users</h6>
+                        <h2 class="card-title mb-0">@Model.Stats.BCStats.Total</h2>
+                        <small class="opacity-75">@Model.Stats.BCStats.Active active</small>
+                    </div>
+                    <i class="bi bi-building" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-subtitle mb-1 opacity-75">End Consumers</h6>
+                        <h2 class="card-title mb-0">@Model.Stats.ECStats.Total</h2>
+                        <small class="opacity-75">@Model.Stats.ECStats.Active active</small>
+                    </div>
+                    <i class="bi bi-person" style="font-size: 2.5rem; opacity: 0.5;"></i>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Stats -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <h4 class="text-primary mb-0">@Model.Stats.RegisteredToday</h4>
+                <small class="text-muted">Registered Today</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <h4 class="text-warning mb-0">@Model.Stats.PendingKYC</h4>
+                <small class="text-muted">Pending KYC</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <h4 class="text-success mb-0">@Model.Stats.RegisteredThisMonth</h4>
+                <small class="text-muted">This Month</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Registration Form -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Register New Stakeholder</h5>
+    </div>
+    <div class="card-body">
+        <form asp-action="RegisterStakeholder" method="post" id="registrationForm">
+            @Html.AntiForgeryToken()
+
+            <!-- Step 1: Role Selection -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label class="form-label fw-bold">Select Role <span class="text-danger">*</span></label>
+                    <div class="btn-group w-100" role="group">
+                        <input type="radio" class="btn-check" name="Role" id="roleDPCM" value="DPCM" autocomplete="off">
+                        <label class="btn btn-outline-purple" for="roleDPCM">
+                            <i class="bi bi-person-badge me-1"></i>DPCM (Manager)
+                        </label>
+
+                        <input type="radio" class="btn-check" name="Role" id="roleDP" value="DP" autocomplete="off">
+                        <label class="btn btn-outline-warning" for="roleDP">
+                            <i class="bi bi-bicycle me-1"></i>Delivery Partner
+                        </label>
+
+                        <input type="radio" class="btn-check" name="Role" id="roleBC" value="BC" autocomplete="off">
+                        <label class="btn btn-outline-info" for="roleBC">
+                            <i class="bi bi-building me-1"></i>Business Consumer
+                        </label>
+
+                        <input type="radio" class="btn-check" name="Role" id="roleEC" value="EC" autocomplete="off">
+                        <label class="btn btn-outline-success" for="roleEC">
+                            <i class="bi bi-person me-1"></i>End Consumer
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <!-- Step 2: Basic Information -->
+            <h6 class="text-muted mb-3"><i class="bi bi-1-circle me-2"></i>Basic Information</h6>
+            <div class="row mb-3">
+                <div class="col-md-4">
+                    <label class="form-label">Phone Number <span class="text-danger">*</span></label>
+                    <div class="input-group">
+                        <span class="input-group-text">+91</span>
+                        <input type="tel" name="Phone" class="form-control" placeholder="9876543210" required maxlength="10" pattern="[0-9]{10}">
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Full Name <span class="text-danger">*</span></label>
+                    <input type="text" name="FullName" class="form-control" placeholder="Enter full name" required>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label">Email</label>
+                    <input type="email" name="Email" class="form-control" placeholder="email@example.com">
+                </div>
+            </div>
+
+            <!-- Address -->
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label class="form-label">Address</label>
+                    <input type="text" name="Address" class="form-control" placeholder="Street address">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">City</label>
+                    <input type="text" name="City" class="form-control" placeholder="City">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">State</label>
+                    <input type="text" name="State" class="form-control" placeholder="State">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Pincode</label>
+                    <input type="text" name="Pincode" class="form-control" placeholder="123456" maxlength="6">
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <!-- DPCM Specific Fields -->
+            <div id="dpcmFields" class="d-none">
+                <h6 class="text-muted mb-3"><i class="bi bi-2-circle me-2"></i>DPCM Details</h6>
+                <div class="row mb-3">
+                    <div class="col-md-4">
+                        <label class="form-label">Business Name</label>
+                        <input type="text" name="BusinessName" class="form-control" placeholder="Business name">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Commission Type</label>
+                        <select name="CommissionType" class="form-select">
+                            <option value="PERCENTAGE">Percentage</option>
+                            <option value="FIXED">Fixed</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Commission Value</label>
+                        <input type="number" name="CommissionValue" class="form-control" step="0.01" value="5" placeholder="5">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Security Deposit</label>
+                        <input type="number" name="SecurityDeposit" class="form-control" step="0.01" value="0" placeholder="0">
+                    </div>
+                    <div class="col-md-2">
+                        <label class="form-label">Service Regions</label>
+                        <input type="text" name="ServiceRegions" class="form-control" placeholder="110001, 110002">
+                    </div>
+                </div>
+                <hr class="my-4" />
+            </div>
+
+            <!-- DP Specific Fields -->
+            <div id="dpFields" class="d-none">
+                <h6 class="text-muted mb-3"><i class="bi bi-2-circle me-2"></i>Delivery Partner Details</h6>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Vehicle Type</label>
+                        <select name="VehicleType" class="form-select">
+                            <option value="BIKE">Bike</option>
+                            <option value="SCOOTER">Scooter</option>
+                            <option value="CYCLE">Cycle</option>
+                            <option value="AUTO">Auto</option>
+                            <option value="CAR">Car</option>
+                            <option value="MINI_TRUCK">Mini Truck</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Vehicle Number</label>
+                        <input type="text" name="VehicleNumber" class="form-control" placeholder="MH01AB1234">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Assign to DPCM</label>
+                        <select name="DPCMId" class="form-select">
+                            <option value="">-- Self Managed --</option>
+                            @foreach (var dpcm in Model.AvailableDPCMs)
+                            {
+                                <option value="@dpcm.Id">@dpcm.Name (@dpcm.ManagedDPsCount DPs)</option>
+                            }
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Service Pincodes</label>
+                        <input type="text" name="ServicePincodes" class="form-control" placeholder="110001, 110002">
+                    </div>
+                </div>
+                <hr class="my-4" />
+            </div>
+
+            <!-- BC Specific Fields -->
+            <div id="bcFields" class="d-none">
+                <h6 class="text-muted mb-3"><i class="bi bi-2-circle me-2"></i>Business Details</h6>
+                <div class="row mb-3">
+                    <div class="col-md-3">
+                        <label class="form-label">Business Name</label>
+                        <input type="text" name="BusinessName" class="form-control" placeholder="Business name">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Business Type</label>
+                        <select name="BusinessType" class="form-select">
+                            <option value="RETAIL">Retail</option>
+                            <option value="ECOMMERCE">E-Commerce</option>
+                            <option value="RESTAURANT">Restaurant</option>
+                            <option value="PHARMACY">Pharmacy</option>
+                            <option value="GROCERY">Grocery</option>
+                            <option value="OTHER">Other</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">GSTIN</label>
+                        <input type="text" name="GSTIN" class="form-control" placeholder="22AAAAA0000A1Z5">
+                    </div>
+                    <div class="col-md-3">
+                        <label class="form-label">Business PAN</label>
+                        <input type="text" name="BusinessPAN" class="form-control" placeholder="AAAAA0000A">
+                    </div>
+                </div>
+                <hr class="my-4" />
+            </div>
+
+            <!-- Options -->
+            <h6 class="text-muted mb-3"><i class="bi bi-3-circle me-2"></i>Options</h6>
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="SendWelcomeSms" id="sendSms" checked>
+                        <label class="form-check-label" for="sendSms">Send Welcome SMS</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="AutoCreateWallet" id="createWallet" checked>
+                        <label class="form-check-label" for="createWallet">Auto Create Wallet</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="checkbox" name="SkipKYC" id="skipKyc">
+                        <label class="form-check-label" for="skipKyc">Skip KYC (Trusted User)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <label class="form-label">Notes</label>
+                    <textarea name="Notes" class="form-control" rows="2" placeholder="Any additional notes..."></textarea>
+                </div>
+            </div>
+
+            <hr class="my-4" />
+
+            <div class="d-flex justify-content-between">
+                <a asp-action="Stakeholders" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Back to List
+                </a>
+                <button type="submit" class="btn btn-primary btn-lg">
+                    <i class="bi bi-person-plus me-2"></i>Register Stakeholder
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .bg-purple { background-color: #6f42c1 !important; color: white; }
+        .btn-outline-purple {
+            color: #6f42c1;
+            border-color: #6f42c1;
+        }
+        .btn-outline-purple:hover, .btn-check:checked + .btn-outline-purple {
+            color: #fff;
+            background-color: #6f42c1;
+            border-color: #6f42c1;
+        }
+        .page-header { margin-bottom: 1.5rem; }
+        .page-title { font-size: 1.75rem; font-weight: 600; margin-bottom: 0.25rem; }
+        .page-subtitle { color: #6c757d; margin-bottom: 0; }
+    </style>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const roleRadios = document.querySelectorAll('input[name="Role"]');
+            const dpcmFields = document.getElementById('dpcmFields');
+            const dpFields = document.getElementById('dpFields');
+            const bcFields = document.getElementById('bcFields');
+
+            function toggleFields() {
+                const selectedRole = document.querySelector('input[name="Role"]:checked')?.value;
+
+                // Hide all
+                dpcmFields.classList.add('d-none');
+                dpFields.classList.add('d-none');
+                bcFields.classList.add('d-none');
+
+                // Show relevant
+                if (selectedRole === 'DPCM') {
+                    dpcmFields.classList.remove('d-none');
+                } else if (selectedRole === 'DP') {
+                    dpFields.classList.remove('d-none');
+                } else if (selectedRole === 'BC') {
+                    bcFields.classList.remove('d-none');
+                }
+            }
+
+            roleRadios.forEach(radio => {
+                radio.addEventListener('change', toggleFields);
+            });
+
+            // Initial check
+            toggleFields();
+        });
+    </script>
+}

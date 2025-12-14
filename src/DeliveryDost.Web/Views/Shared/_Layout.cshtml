@@ -92,22 +92,62 @@
                     </li>
                 }
 
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-section">Onboarding</li>
+                    <li class="nav-item">
+                        <a asp-controller="Admin" asp-action="StakeholderOnboarding" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "StakeholderOnboarding" ? "active" : "")">
+                            <i class="bi bi-person-plus"></i> Register Stakeholder
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-controller="Admin" asp-action="Stakeholders" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Stakeholders" ? "active" : "")">
+                            <i class="bi bi-people-fill"></i> Stakeholder List
+                        </a>
+                    </li>
+                }
+
                 @if (User.IsInRole("DPCM") || User.IsInRole("Admin"))
                 {
                     <li class="nav-section">Management</li>
                     <li class="nav-item">
-                        <a asp-controller="Admin" asp-action="Users" class="nav-link">
+                        <a asp-controller="Admin" asp-action="Users" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Users" ? "active" : "")">
                             <i class="bi bi-people"></i> Users
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a asp-controller="Admin" asp-action="KycRequests" class="nav-link">
+                        <a asp-controller="Admin" asp-action="KycRequests" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "KycRequests" ? "active" : "")">
                             <i class="bi bi-file-earmark-check"></i> KYC Requests
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a asp-controller="Admin" asp-action="Complaints" class="nav-link">
+                        <a asp-controller="Admin" asp-action="Complaints" class="nav-link @(ViewContext.RouteData.Values["action"]?.ToString() == "Complaints" ? "active" : "")">
                             <i class="bi bi-exclamation-circle"></i> Complaints
+                        </a>
+                    </li>
+                }
+
+                @if (User.IsInRole("Admin"))
+                {
+                    <li class="nav-section">Reports</li>
+                    <li class="nav-item">
+                        <a asp-controller="Admin" asp-action="EndConsumerReport" class="nav-link">
+                            <i class="bi bi-person"></i> EC Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-controller="Admin" asp-action="BusinessConsumerReport" class="nav-link">
+                            <i class="bi bi-building"></i> BC Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-controller="Admin" asp-action="DeliveryPartnerReport" class="nav-link">
+                            <i class="bi bi-bicycle"></i> DP Report
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a asp-controller="Admin" asp-action="DPCMReport" class="nav-link">
+                            <i class="bi bi-person-badge"></i> DPCM Report
                         </a>
                     </li>
                 }
